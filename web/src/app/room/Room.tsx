@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { EditableList, rowId, type Row } from "@/components/EditableList";
 import { Arrow, Icon } from "@/components/Icon";
-import type { CaptionEvent, ServerEvent } from "@/lib/ai";
+import type { CaptionEvent, ServerEvent, SpokenLine } from "@/lib/ai";
 import { detect, segments } from "@/lib/captions";
 import { KEYS, store, useStored } from "@/lib/store";
 import { delay } from "@/lib/ui";
@@ -91,6 +91,9 @@ export function Room() {
     dispatch({ type: "final", line });
     setAnnounce(line.kind === "typed" ? `${line.mine ? "You" : line.speaker} typed: ${line.text}` : line.text);
     if (line.kind === "typed" && line.mine) store.set(KEYS.reply, line.text);
+    // A local copy of the conversation, so a summary still works in demo mode or after a service restart.
+    const transcript = store.json<SpokenLine[]>(KEYS.transcript, []);
+    store.setJson(KEYS.transcript, [...transcript, { speaker: line.mine ? name : line.speaker, kind: line.kind, text: line.text }].slice(-2000));
     // Read the latest saved list, not the render-time copy: lines can land between renders.
     const saved = store.json<Row[]>(KEYS.details, []);
     const fresh = detect(line.text).filter((d) => !saved.some((r) => r.label.toLowerCase() === d.label.toLowerCase()));

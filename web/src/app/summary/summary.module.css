@@ -22,3 +22,11 @@
   .done{min-height:auto}
   .done :global(.tile){margin-bottom:28px}
 }
+.spinner{display:inline-block;width:14px;height:14px;margin-right:9px;vertical-align:-2px;border-radius:50%;border:2px solid var(--line-strong);border-top-color:var(--ink);animation:spin .8s linear infinite}
+.failed{margin:4px 0 0;padding:12px 14px;border-radius:var(--r-sm);background:var(--coral-tint);color:#5a1a10;font-size:var(--fs-small);line-height:1.5}
+.failed p{margin:0}
+.failed p+p{margin-top:6px}
+.failed :global(.linkbtn){color:#5a1a10}
+.failed :global(.tag){vertical-align:1px;padding:2px 8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spinner{animation-duration:2.4s}}

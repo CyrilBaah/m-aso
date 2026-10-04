@@ -49,11 +49,12 @@ export const KEYS = {
   prefs: "maso_prefs",
   mode: "maso_mode",
   name: "maso_name",
+  transcript: "maso_transcript",
 } as const;
 
 /** Everything a session leaves behind. Cleared on a new room or on delete. */
 export function resetSession() {
-  [KEYS.reply, KEYS.details, KEYS.summary].forEach((k) => store.del(k));
+  [KEYS.reply, KEYS.details, KEYS.summary, KEYS.transcript].forEach((k) => store.del(k));
 }
 
 function subscribe(cb: () => void) {

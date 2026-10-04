@@ -212,3 +212,4 @@ li:hover>.rowtools,li:focus-within>.rowtools{opacity:1}
 
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media(prefers-reduced-motion:reduce){.switch,.switch span,.segmented span,.rowtools,.iconbtn{transition:none}}
+.tag.light.is-ai{background:var(--ink);color:var(--yellow);border-color:var(--ink)}
