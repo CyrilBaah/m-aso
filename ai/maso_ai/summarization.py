@@ -18,11 +18,17 @@ log = logging.getLogger("maso.gemma")
 SYSTEM = """You summarise workplace conversations for m’aso, a captioning tool used by Deaf and \
 hard-of-hearing colleagues. Read the transcript and record only what was actually said.
 
+Each line is "Name (said): …" for speech or "Name (typed): …" for a typed reply. Typed replies are \
+how some participants speak: treat them exactly like spoken lines.
+
 Rules:
 - Never invent decisions, people, dates or tasks. If something is unclear, leave it out.
+- Every commitment ("I will…", "I'll…", "we'll…", "can you…" that is agreed) is an action item. \
+Include commitments from every participant, whether said or typed.
+- The owner is the person who will do the task (the one who said "I'll…"); otherwise null.
+- "due" is only a deadline the transcript states for that task; otherwise null.
 - Keep each item short and plain: at most 15 words, no filler.
 - Use the speakers' own wording for dates and times ("Thursday at 2 PM").
-- An action item's owner is the person who will do it, if the transcript says so; otherwise null.
 - Return empty lists when there is nothing to report."""
 
 SCHEMA: dict[str, Any] = {
