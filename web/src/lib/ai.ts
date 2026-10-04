@@ -1,4 +1,4 @@
-/* Client for the m’aso AI service (ai/). Every call fails soft: the app keeps working in demo mode. */
+/* Client for the m’aso AI service (ai/): rooms, live captions and Gemma summaries. */
 
 export const AI_URL = (process.env.NEXT_PUBLIC_AI_URL ?? "http://localhost:8000").replace(/\/$/, "");
 export const WS_URL = AI_URL.replace(/^http/, "ws");
@@ -6,7 +6,7 @@ export const WS_URL = AI_URL.replace(/^http/, "ws");
 export type ServerEvent =
   | { type: "welcome"; sid: number; whisper: string }
   | { type: "history"; lines: CaptionEvent[] }
-  | { type: "presence"; participants: number }
+  | { type: "presence"; participants: number; names: string[] }
   | CaptionEvent
   | { type: "error"; code: string; message: string };
 
@@ -20,14 +20,27 @@ export type CaptionEvent = {
   final: boolean;
 };
 
-/** Asks the service for a fresh room code; falls back to a local one so the flow never blocks. */
+/** Opens a room on the AI service. Throws with a person-readable message when it can’t. */
 export async function createRoom(): Promise<string> {
   try {
     const res = await fetch(`${AI_URL}/rooms`, { method: "POST" });
     if (res.ok) return (await res.json()).code as string;
   } catch {}
-  const letters = Array.from({ length: 4 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join("");
-  return `${letters}-${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
+  throw new Error("The m’aso service isn’t reachable, so a room can’t be opened. Check that it’s running, then try again.");
+}
+
+export type RoomLookup = { state: "open"; participants: number } | { state: "missing" } | { state: "unreachable" };
+
+/** Checks that a room is open before someone joins it. */
+export async function findRoom(code: string, signal?: AbortSignal): Promise<RoomLookup> {
+  try {
+    const res = await fetch(`${AI_URL}/rooms/${encodeURIComponent(code)}`, { signal });
+    if (res.ok) return { state: "open", participants: (await res.json()).participants as number };
+    return { state: "missing" };
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    return { state: "unreachable" };
+  }
 }
 
 /** Removes the room's transcript from the service. Uses keepalive so it survives navigation. */

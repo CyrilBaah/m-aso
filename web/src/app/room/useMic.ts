@@ -8,9 +8,9 @@ const CHUNK = TARGET_RATE / 10; // 100 ms per message
 export function micErrorMessage(err: unknown): string {
   const name = err instanceof DOMException ? err.name : "";
   if (name === "NotAllowedError" || name === "SecurityError")
-    return "Microphone access is blocked. Allow it from the address bar, or switch to demo captions.";
-  if (name === "NotFoundError" || name === "OverconstrainedError") return "No microphone was found. Connect one, or switch to demo captions.";
-  return "The microphone could not start. Try again, or switch to demo captions.";
+    return "Microphone access is blocked. Allow it from the address bar, then start listening again.";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "No microphone was found. Connect one.";
+  return "The microphone could not start. Try again.";
 }
 
 /** While active, streams the microphone as 16 kHz mono int16 chunks. */

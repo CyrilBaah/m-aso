@@ -104,9 +104,10 @@ def delete_room(code: str) -> None:
     hub.delete(valid_code(code))
 
 
-async def caption_worker(room: Room, speaker: str, sid: int, jobs: asyncio.Queue[Job | None]) -> None:
+async def caption_worker(room: Room, ws: WebSocket, sid: int, jobs: asyncio.Queue[Job | None]) -> None:
     """Transcribes one speaker's utterances in order. Stale interim jobs are skipped."""
     while (job := await jobs.get()) is not None:
+        speaker = room.clients.get(ws, "Participant")  # follows renames
         if not job.final and not jobs.empty():
             continue  # newer audio is already waiting; this interim would be out of date
         text = await asyncio.to_thread(whisper.transcribe, job.audio)
@@ -137,7 +138,7 @@ async def room_socket(ws: WebSocket, code: str, name: str = "Participant") -> No
     segmenter: Segmenter | None = None
     want_interim = True
     jobs: asyncio.Queue[Job | None] = asyncio.Queue()
-    worker = asyncio.create_task(caption_worker(room, speaker, sid, jobs))
+    worker = asyncio.create_task(caption_worker(room, ws, sid, jobs))
     try:
         while True:
             message = await ws.receive()
@@ -150,7 +151,11 @@ async def room_socket(ws: WebSocket, code: str, name: str = "Participant") -> No
                 continue
             event = json.loads(message.get("text") or "{}")
             kind = event.get("type")
-            if kind == "reply":
+            if kind == "rename":
+                speaker = str(event.get("name", "")).strip()[:40] or "Participant"
+                room.clients[ws] = speaker
+                await room.announce_presence()
+            elif kind == "reply":
                 text = str(event.get("text", "")).strip()[:500]
                 if text:
                     await room.broadcast(room.add_line("typed", speaker, sid, text).as_event())

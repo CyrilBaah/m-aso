@@ -25,11 +25,11 @@ def test_typed_reply_reaches_everyone_in_the_room():
         welcome_a = a.receive_json()
         assert welcome_a["type"] == "welcome"
         assert a.receive_json()["type"] == "history"
-        assert a.receive_json() == {"type": "presence", "participants": 1}
-        assert a.receive_json() == {"type": "presence", "participants": 2}
+        assert a.receive_json() == {"type": "presence", "participants": 1, "names": ["Ama"]}
+        assert a.receive_json() == {"type": "presence", "participants": 2, "names": ["Ama", "Kofi"]}
         assert b.receive_json()["type"] == "welcome"
         assert b.receive_json()["type"] == "history"
-        assert b.receive_json() == {"type": "presence", "participants": 2}
+        assert b.receive_json() == {"type": "presence", "participants": 2, "names": ["Ama", "Kofi"]}
 
         a.send_json({"type": "reply", "text": "Can you share the slides?"})
         for sock in (a, b):
@@ -48,3 +48,13 @@ def test_late_joiner_gets_recent_history_and_delete_clears_it():
             assert [l["text"] for l in b.receive_json()["lines"]] == ["First line"]
     assert client.delete("/rooms/LATE-111").status_code == 204
     assert client.get("/rooms/LATE-111").status_code == 404
+
+
+def test_rename_updates_presence_and_later_lines():
+    with client.websocket_connect("/rooms/NAME-222/ws") as a:
+        for _ in range(3):
+            a.receive_json()
+        a.send_json({"type": "rename", "name": "Efua"})
+        assert a.receive_json() == {"type": "presence", "participants": 1, "names": ["Efua"]}
+        a.send_json({"type": "reply", "text": "Hello"})
+        assert a.receive_json()["speaker"] == "Efua"

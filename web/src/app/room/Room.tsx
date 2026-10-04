@@ -6,12 +6,12 @@ import { EditableList, rowId, type Row } from "@/components/EditableList";
 import { Arrow, Icon } from "@/components/Icon";
 import type { CaptionEvent, ServerEvent, SpokenLine } from "@/lib/ai";
 import { detect, segments } from "@/lib/captions";
-import { KEYS, store, useStored } from "@/lib/store";
+import { KEYS, store, useHydrated, useStored } from "@/lib/store";
+import { NoRoom } from "@/components/NoRoom";
 import { delay } from "@/lib/ui";
-import { DEFAULT_PREFS, type CaptionHandlers, type Prefs } from "./types";
-import { useDemoCaptions } from "./useDemoCaptions";
+import { useRoomSocket } from "@/lib/useRoomSocket";
+import { DEFAULT_PREFS, type Prefs } from "./types";
 import { micErrorMessage, useMic } from "./useMic";
-import { useRoomSocket } from "./useRoomSocket";
 import s from "./room.module.css";
 
 type Line = { id: string; kind: "speech" | "typed"; text: string; speaker: string; mine: boolean };
@@ -63,10 +63,11 @@ function Who({ line }: { line: Pick<Line, "kind" | "speaker" | "mine"> }) {
   return null;
 }
 
-let localSeq = 0;
+const OFFLINE = "The m’aso service isn’t reachable, so live captions can’t start. Check that it’s running, then try again.";
 
 export function Room() {
-  const code = useStored(KEYS.room, "WORK-482");
+  const code = useStored(KEYS.room, "");
+  const hydrated = useHydrated();
   const name = useStored(KEYS.name, "") || "Participant";
 
   const prefsRaw = useStored(KEYS.prefs, "");
@@ -76,7 +77,6 @@ export function Room() {
   const detailsRaw = useStored(KEYS.details, "");
   const details = useMemo(() => parse<Row[]>(detailsRaw, []), [detailsRaw]);
 
-  const mode = useStored(KEYS.mode, "live") === "demo" ? "demo" : "live";
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
   const [participants, setParticipants] = useState(1);
@@ -91,7 +91,7 @@ export function Room() {
     dispatch({ type: "final", line });
     setAnnounce(line.kind === "typed" ? `${line.mine ? "You" : line.speaker} typed: ${line.text}` : line.text);
     if (line.kind === "typed" && line.mine) store.set(KEYS.reply, line.text);
-    // A local copy of the conversation, so a summary still works in demo mode or after a service restart.
+    // A local copy of the conversation, so a summary still works if the service restarts mid-conversation.
     const transcript = store.json<SpokenLine[]>(KEYS.transcript, []);
     store.setJson(KEYS.transcript, [...transcript, { speaker: line.mine ? name : line.speaker, kind: line.kind, text: line.text }].slice(-2000));
     // Read the latest saved list, not the render-time copy: lines can land between renders.
@@ -117,15 +117,8 @@ export function Room() {
   });
   const online = socket.status === "open";
 
-  // Demo mode: scripted lines, shown only in this browser.
-  const demoHandlers: CaptionHandlers = {
-    onInterim: (text) => dispatch({ type: "interim", text, speaker: name, mine: true }),
-    onFinal: (text) => recordLine({ id: `l${++localSeq}`, kind: "speech", text, speaker: name, mine: true }),
-  };
-  useDemoCaptions(listening && mode === "demo", prefs.pace, demoHandlers);
-
-  // Live mode: our microphone goes to faster-whisper; captions come back to everyone.
-  const live = listening && mode === "live";
+  // Our microphone goes to faster-whisper; captions come back to everyone in the room.
+  const live = listening && online;
   const { send } = socket; // stable; the socket object itself changes every render
   useEffect(() => {
     if (!live) return;
@@ -142,15 +135,8 @@ export function Room() {
   function toggleListening() {
     setError("");
     if (listening) return setListening(false);
-    if (mode === "live" && !online)
-      return setError("Live captions need the m’aso AI service, and it isn’t reachable. Start it, or switch to demo captions.");
+    if (!online) return setError(OFFLINE);
     setListening(true);
-  }
-
-  function switchMode() {
-    setListening(false);
-    setError("");
-    store.set(KEYS.mode, mode === "live" ? "demo" : "live");
   }
 
   // Display pop-over closes on Escape or a click outside it.
@@ -182,23 +168,23 @@ export function Room() {
       document.getElementById("replyInput")?.focus();
       return;
     }
-    // Shared rooms echo the reply back to everyone, us included; offline we show it locally.
-    if (!(mode === "live" && socket.send({ type: "reply", text })))
-      recordLine({ id: `l${++localSeq}`, kind: "typed", text, speaker: name, mine: true });
+    // The room echoes the reply back to everyone, us included, and that echo is what we show.
+    if (!socket.send({ type: "reply", text })) {
+      setNotice("Not sent: the m’aso service isn’t reachable. Your reply is still in the box.");
+      return;
+    }
     setNotice("Sent to everyone in the room.");
     setReply("");
   }
 
+  if (hydrated && !code) return <NoRoom />;
+
   const { history, current, interim } = stream;
   const idle = interim === null && current === null;
-  const stateLabel = listening ? (mode === "live" ? "Listening" : "Playing demo") : mode === "live" && online ? `${participants} in room` : "Paused";
-  const listenLabel = listening ? "Stop listening" : mode === "live" ? "Start listening" : "Play demo captions";
-  const sourceNote =
-    mode === "live"
-      ? online
-        ? "Everyone in the room sees these captions. m’aso’s own speech model (faster-whisper) transcribes the microphone; audio is never stored or sent to anyone else."
-        : "Connecting to the m’aso AI service… Typed replies still work on this screen."
-      : "Everyone in the room sees these captions. Sample lines play instead of your microphone.";
+  const stateLabel = listening ? "Listening" : online ? `${participants} in room` : "Connecting…";
+  const sourceNote = online
+    ? "Everyone in the room sees these captions. m’aso’s own speech model (faster-whisper) transcribes the microphone; audio is never stored or sent to anyone else."
+    : "Connecting to the m’aso service… Captions and replies start as soon as it’s reachable.";
 
   return (
     <>
@@ -226,8 +212,8 @@ export function Room() {
           aria-label="Captions"
         >
           <div className={s.roomtop}>
-            <span className={`tag ${mode === "demo" ? "is-demo" : ""}`} id="modeTag">
-              {mode === "live" ? "Live · faster-whisper" : "Demo captions · simulated"}
+            <span className="tag" id="modeTag">
+              Live · faster-whisper
             </span>
             <div className={s.topright}>
               <span className={`live ${listening ? "pulse" : "idle"}`} id="liveState">
@@ -319,10 +305,7 @@ export function Room() {
           <div className={s.capcontrols}>
             <button className={s.listen} id="listenBtn" type="button" aria-pressed={listening} onClick={toggleListening}>
               <Icon name="mic" />
-              <span>{listenLabel}</span>
-            </button>
-            <button className={`linkbtn ${s.ondark}`} id="modeBtn" type="button" onClick={switchMode}>
-              {mode === "live" ? "Use demo captions" : "Use my microphone"}
+              <span>{listening ? "Stop listening" : "Start listening"}</span>
             </button>
           </div>
           <p className={s.source} id="sourceNote">

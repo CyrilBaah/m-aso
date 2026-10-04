@@ -30,8 +30,6 @@
 .listen:hover{transform:translateY(-2px);background:#2b3745}
 .listen[aria-pressed=true]{background:var(--yellow);color:var(--ink);border-color:var(--yellow)}
 .listen[aria-pressed=true] :global(.ico){color:var(--ink);animation:micPulse 1s ease-in-out infinite}
-.ondark{color:var(--on-dark-muted);font-size:var(--fs-label)}
-.ondark:hover{color:#fff}
 .source{flex:none;margin:10px 0 0;font-size:var(--fs-label);line-height:1.45;color:var(--on-dark-muted);max-width:58ch}
 .capError{margin:12px 0 0;padding:11px 14px;border-radius:12px;background:#ff5d4724;border:1px solid #ff5d4766;color:#ffd7d0;font-size:var(--fs-small);line-height:1.45}
 
@@ -56,7 +54,7 @@
 /* High contrast: flat black, white text, no decoration */
 .hc{background:#000;box-shadow:none;outline:3px solid #fff;outline-offset:-3px}
 .hc:before,.hc:after{display:none}
-.hc .history li,.hc .source,.hc .replynotice,.hc .ondark,.hc .interim,.hc .idle{color:#fff}
+.hc .history li,.hc .source,.hc .replynotice,.hc .interim,.hc .idle{color:#fff}
 .hc .history mark{background:#fff;color:#000}
 .hc .caption{font-weight:800}
 .hc .reply input{background:#000;border-color:#fff}

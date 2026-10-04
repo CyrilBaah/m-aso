@@ -11,11 +11,6 @@ import s from "./summary.module.css";
 type SummaryRow = Row & { source?: "gemma" };
 type Status = { state: "idle" | "reading" | "ready" } | { state: "failed"; message: string };
 
-const SAMPLE: SummaryRow[] = [
-  { id: "decision", label: "Decision", text: "The client meeting is now Thursday at 2:00 PM.", demo: true },
-  { id: "action", label: "Action item", text: "Send the meeting agenda before Thursday.", demo: true },
-];
-
 function parse<T>(raw: string, fallback: T): T {
   try {
     return raw ? (JSON.parse(raw) as T) : fallback;
@@ -37,14 +32,11 @@ function rowsFrom(summary: Summary): SummaryRow[] {
   ];
 }
 
-/** Without Gemma: sample rows plus what the room itself picked up. */
-function fallbackRows(details: Row[], reply: string): SummaryRow[] {
+/** Without Gemma: only what the room itself picked up during the conversation. */
+function capturedRows(details: Row[], reply: string): SummaryRow[] {
   return [
-    ...SAMPLE,
     ...details.map((d) => ({ id: `d-${d.id}`, label: d.tone === "is-blue" ? "Follow-up" : "Date or time", text: d.label })),
-    reply
-      ? { id: "reply", label: "Your reply", text: reply }
-      : { id: "reply", label: "Your reply", text: "Please send me the agenda before then.", demo: true },
+    ...(reply ? [{ id: "reply", label: "Your last reply", text: reply }] : []),
   ];
 }
 
@@ -74,7 +66,7 @@ export function SummaryCard() {
 
   const saved = parse<SummaryRow[] | null>(savedRaw, null);
   const items = useMemo<SummaryRow[]>(
-    () => saved ?? (status.state === "failed" ? fallbackRows(parse<Row[]>(detailsRaw, []), reply) : []),
+    () => saved ?? (status.state === "failed" ? capturedRows(parse<Row[]>(detailsRaw, []), reply) : []),
     [saved, status.state, detailsRaw, reply],
   );
   const reading = !saved && (status.state === "reading" || status.state === "idle");
@@ -96,7 +88,7 @@ export function SummaryCard() {
             <b>No AI summary this time.</b> {status.message}
           </p>
           <p>
-            Below is what the room picked up. Rows tagged <span className="tag light">Sample</span> are demo text.{" "}
+            Below is what the room picked up while you talked.{" "}
             <button
               type="button"
               className="linkbtn"
@@ -118,10 +110,7 @@ export function SummaryCard() {
               remove anything before you save.
             </>
           ) : (
-            <>
-              Rows tagged <span className="tag light">Sample</span> are demo text, not from your conversation. Fix or
-              remove anything before you save.
-            </>
+            <>Fix or remove anything before you save.</>
           )}
         </p>
       )}
@@ -132,16 +121,16 @@ export function SummaryCard() {
           onChange={(next) => store.setJson(KEYS.summary, next)}
           rowClassName="summaryrow"
           listClassName={`summary ${s.list}`}
-          emptyText={fromGemma || saved ? "Nothing left in this summary. Delete the session, or save it empty." : "Gemma found nothing to record."}
+          emptyText={
+            status.state === "failed" && !saved
+              ? "Nothing was captured in this conversation."
+              : "Nothing to record. Delete the session, or save it empty."
+          }
           render={(row) => (
             <>
               <b>
                 {row.label}
-                {row.edited ? (
-                  <span className="tag light is-edited">Edited</span>
-                ) : row.demo ? (
-                  <span className="tag light">Sample</span>
-                ) : null}
+                {row.edited && <span className="tag light is-edited">Edited</span>}
               </b>
               <span>{row.text}</span>
             </>

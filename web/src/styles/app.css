@@ -189,9 +189,8 @@ li:hover>.rowtools,li:focus-within>.rowtools{opacity:1}
 .linkbtn{border:0;background:none;padding:2px 0;color:var(--ink);font-weight:800;text-decoration:underline;text-underline-offset:3px}
 .flag{display:inline-block;margin-top:4px;font-style:normal;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 
-/* Tags label what is simulated or changed */
+/* Tags label where content came from or that it changed */
 .tag{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:var(--r-pill);font-size:11px;font-weight:800;letter-spacing:.04em;background:var(--ink-raised);color:var(--mint-soft);border:1px solid #2e3946}
-.tag.is-demo{background:var(--yellow);color:var(--ink);border-color:var(--yellow)}
 .tag.light{background:var(--yellow-tint);color:#5c5600;border-color:var(--yellow-line)}
 .tag.light.is-edited{background:var(--blue-tint);color:var(--blue-deep);border-color:#bccaff}
 

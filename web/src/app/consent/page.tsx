@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AppNav } from "@/components/AppNav";
 import { Arrow, Icon } from "@/components/Icon";
-import { RoomCode } from "@/components/RoomCode";
 import { Shapes } from "@/components/Shapes";
 import { delay } from "@/lib/ui";
-import { NameField } from "./NameField";
+import { RoomPresence } from "./RoomPresence";
 import s from "./consent.module.css";
 
 export const metadata: Metadata = { title: "Consent" };
@@ -32,28 +31,7 @@ export default function ConsentPage() {
           </p>
         </header>
         <section className={`${s.panel} rise`} style={delay(0.24)}>
-          <article className={`panel-dark ${s.status}`}>
-            <span className="live">Room ready</span>
-            <h2>You’re both here.</h2>
-            <p className="body">
-              You and your colleague are in private room{" "}
-              <strong className={s.code}>
-                <RoomCode />
-              </strong>
-              . Take a moment, then begin together.
-            </p>
-            <NameField className={s.name} />
-            <div className="chips">
-              <span className="chip">
-                <i />
-                You
-              </span>
-              <span className="chip">
-                <i />
-                Your colleague
-              </span>
-            </div>
-          </article>
+          <RoomPresence />
           <article className="card">
             <h2 className="cardtitle">Captioning with care.</h2>
             <p className="body">Both participants will see the same captions and can type replies.</p>

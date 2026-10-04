@@ -9,8 +9,6 @@ export type Row = {
   text: string;
   tone?: "" | "is-blue";
   edited?: boolean;
-  /** Placeholder text that did not come from the conversation. */
-  demo?: boolean;
 };
 
 type Props = {

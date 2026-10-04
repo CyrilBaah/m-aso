@@ -47,7 +47,6 @@ export const KEYS = {
   details: "maso_details",
   summary: "maso_summary",
   prefs: "maso_prefs",
-  mode: "maso_mode",
   name: "maso_name",
   transcript: "maso_transcript",
 } as const;
@@ -73,4 +72,10 @@ export function useStored(key: string, fallback: string): string {
     () => store.get(key) ?? fallback,
     () => fallback,
   );
+}
+
+const noop = () => () => {};
+/** False during server render and hydration, true after: avoids flashing the wrong state. */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(noop, () => true, () => false);
 }

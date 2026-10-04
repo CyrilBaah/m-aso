@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Arrow } from "@/components/Icon";
+import { findRoom, type RoomLookup } from "@/lib/ai";
 import { KEYS, resetSession, store } from "@/lib/store";
 import { delay } from "@/lib/ui";
 import s from "./join.module.css";
@@ -21,12 +22,47 @@ export function JoinForm({ initialCode }: { initialCode: string }) {
   const router = useRouter();
   const [code, setCode] = useState(formatCode(initialCode));
   const [error, setError] = useState(false);
-  const found = isValid(code);
+  const [lookup, setLookup] = useState<{ code: string; result: RoomLookup } | null>(null);
+  const valid = isValid(code);
+  const result = lookup?.code === code ? lookup.result : null;
+  const found = result?.state === "open";
+
+  // Check the room really exists as soon as the code is complete.
+  useEffect(() => {
+    if (!isValid(code)) return;
+    const controller = new AbortController();
+    const t = setTimeout(() => {
+      findRoom(code, controller.signal)
+        .then((r) => setLookup({ code, result: r }))
+        .catch(() => {});
+    }, 250);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
+  }, [code]);
+
+  const status = !valid
+    ? { title: "Waiting for a code", text: "Type the code to find the room.", tone: "" }
+    : !result
+      ? { title: "Looking for the room…", text: "Checking with the m’aso service.", tone: "" }
+      : result.state === "open"
+        ? {
+            title: "Room found",
+            text:
+              result.participants === 0
+                ? "The room is open. You are ready to join."
+                : `${result.participants === 1 ? "1 person is" : `${result.participants} people are`} already in the room.`,
+            tone: s.found,
+          }
+        : result.state === "missing"
+          ? { title: "No room with that code", text: "Check the code with your colleague. Rooms close when everyone leaves for two hours.", tone: s.missing }
+          : { title: "Can’t reach the m’aso service", text: "Check that it’s running, then try again.", tone: s.missing };
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!found) {
-      setError(true);
+      setError(!valid);
       document.getElementById("code")?.focus();
       return;
     }
@@ -50,23 +86,23 @@ export function JoinForm({ initialCode }: { initialCode: string }) {
         autoCapitalize="characters"
         spellCheck={false}
         aria-describedby="codeHint"
-        aria-invalid={(error && !found) || undefined}
+        aria-invalid={(error && !valid) || undefined}
         value={code}
         onChange={(e) => {
           setCode(formatCode(e.target.value));
           setError(false);
         }}
       />
-      <p className={`${s.hint} ${error && !found ? s.error : ""}`} id="codeHint">
-        {error && !found ? "That code doesn’t look right. Use four letters and three numbers, like WORK-482." : HINT}
+      <p className={`${s.hint} ${error && !valid ? s.error : ""}`} id="codeHint">
+        {error && !valid ? "That code doesn’t look right. Use four letters and three numbers, like WORK-482." : HINT}
       </p>
       <section className={`card accent static is-blue ${s.status}`}>
         <ul className="itemlist">
-          <li className={`item ${found ? s.found : ""}`} id="joinStatus">
+          <li className={`item ${status.tone}`} id="joinStatus" role="status">
             <span className="dot is-blue" />
             <div>
-              <b>{found ? "Room found" : "Waiting for a code"}</b>
-              <span>{found ? "You are ready to join the private conversation." : "Type the code to find the room."}</span>
+              <b>{status.title}</b>
+              <span>{status.text}</span>
             </div>
           </li>
         </ul>

@@ -62,7 +62,8 @@ class Room:
             self.clients.pop(ws, None)
 
     async def announce_presence(self) -> None:
-        await self.broadcast({"type": "presence", "participants": len(self.clients)})
+        names = sorted(self.clients.values(), key=str.lower)
+        await self.broadcast({"type": "presence", "participants": len(names), "names": names})
 
 
 class RoomHub:

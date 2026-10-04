@@ -36,10 +36,3 @@ export function segments(line: string): { text: string; mark: boolean }[] {
   if (last < line.length) out.push({ text: line.slice(last), mark: false });
   return out;
 }
-
-export const DEMO_LINES = [
-  "The client meeting has moved to Thursday at 2 PM.",
-  "I will send the agenda before the meeting.",
-  "Can you review the budget slides by Friday?",
-  "Thanks, that works for everyone.",
-];
