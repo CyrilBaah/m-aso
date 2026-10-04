@@ -59,9 +59,15 @@ export function JoinForm({ initialCode }: { initialCode: string }) {
           ? { title: "No room with that code", text: "Check the code with your teammate. Rooms close when everyone leaves for two hours.", tone: s.missing }
           : { title: "Can’t reach the m’aso service", text: "Check that it’s running, then try again.", tone: s.missing };
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!found) {
+    // Clicked before the room check came back: check now rather than ignore the click.
+    if (valid && !result) {
+      const r = await findRoom(code).catch(() => null);
+      if (!r) return;
+      setLookup({ code, result: r });
+      if (r.state !== "open") return;
+    } else if (!found) {
       setError(!valid);
       document.getElementById("code")?.focus();
       return;

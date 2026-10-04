@@ -34,7 +34,7 @@ test("someone who skipped consent is pointed back to it", async ({ page }) => {
   const code = (await (await page.request.post("http://localhost:8000/rooms")).json()).code as string;
   await page.goto(`/join?code=${code}`);
   await page.getByRole("button", { name: "Join room" }).click();
-  await expect(page).toHaveURL(/consent/);
+  await expect(page).toHaveURL(/consent/, { timeout: 20_000 });
   await page.goto("/room");
   await expect(page.locator("#consentNote")).toContainText("You haven’t agreed to captions yet.");
   await expect(page.locator("#liveState")).toHaveText("Waiting for you to agree");
