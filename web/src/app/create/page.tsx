@@ -3,12 +3,10 @@ import Link from "next/link";
 import { AppNav } from "@/components/AppNav";
 import { delay } from "@/lib/ui";
 import { Arrow } from "@/components/Icon";
-import { CopyLink } from "./CopyLink";
+import { RoomTicket } from "./RoomTicket";
 import s from "./create.module.css";
 
 export const metadata: Metadata = { title: "Create room" };
-
-const CODE = "WORK-482";
 
 export default function CreatePage() {
   return (
@@ -25,12 +23,7 @@ export default function CreatePage() {
           </p>
         </header>
         <div className="rise" style={delay(.24)}>
-          <div className="roomcode" aria-label="Room code">
-            {CODE}
-          </div>
-          <p className={s.share}>
-            Share link · <CopyLink code={CODE} linkClassName={s.link} />
-          </p>
+          <RoomTicket shareClassName={s.share} linkClassName={s.link} />
         </div>
         <section className={`card accent static rise ${s.waiting}`} style={delay(.32)}>
           <ul className="itemlist">

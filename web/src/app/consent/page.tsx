@@ -5,13 +5,14 @@ import { Arrow, Icon } from "@/components/Icon";
 import { RoomCode } from "@/components/RoomCode";
 import { Shapes } from "@/components/Shapes";
 import { delay } from "@/lib/ui";
+import { NameField } from "./NameField";
 import s from "./consent.module.css";
 
 export const metadata: Metadata = { title: "Consent" };
 
 const PROMISES = [
   { icon: "eye", tone: "", title: "Shared visibility", text: "Everyone can see when captions are active." },
-  { icon: "shield", tone: "is-blue", title: "Private by default", text: "m’aso never saves raw audio. Captions are transcribed on this device." },
+  { icon: "shield", tone: "is-blue", title: "Private by default", text: "m’aso never saves raw audio. Its own speech model writes the captions, not a third party." },
   { icon: "trash", tone: "is-coral", title: "Yours to delete", text: "End the session and delete its summary at any time." },
 ] as const;
 
@@ -41,6 +42,7 @@ export default function ConsentPage() {
               </strong>
               . Take a moment, then begin together.
             </p>
+            <NameField className={s.name} />
             <div className="chips">
               <span className="chip">
                 <i />

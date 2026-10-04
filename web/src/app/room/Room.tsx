@@ -4,23 +4,40 @@ import Link from "next/link";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { EditableList, rowId, type Row } from "@/components/EditableList";
 import { Arrow, Icon } from "@/components/Icon";
+import type { CaptionEvent, ServerEvent } from "@/lib/ai";
 import { detect, segments } from "@/lib/captions";
 import { KEYS, store, useStored } from "@/lib/store";
 import { delay } from "@/lib/ui";
 import { DEFAULT_PREFS, type CaptionHandlers, type Prefs } from "./types";
 import { useDemoCaptions } from "./useDemoCaptions";
+import { micErrorMessage, useMic } from "./useMic";
+import { useRoomSocket } from "./useRoomSocket";
 import s from "./room.module.css";
 
-type Line = { id: number; kind: "speech" | "typed"; text: string };
-type Stream = { history: Line[]; current: Line | null; interim: string | null };
-type Action = { type: "interim"; text: string } | { type: "final"; line: Line };
+type Line = { id: string; kind: "speech" | "typed"; text: string; speaker: string; mine: boolean };
+type Stream = { history: Line[]; current: Line | null; interim: { text: string; speaker: string; mine: boolean } | null };
+type Action =
+  | { type: "interim"; text: string; speaker: string; mine: boolean }
+  | { type: "clearInterim" }
+  | { type: "final"; line: Line }
+  | { type: "history"; lines: Line[] };
 
 /** The big caption slot shows the newest line; the three before it fade above. */
 function streamReducer(state: Stream, action: Action): Stream {
   const archive = (h: Line[], l: Line | null) => (l ? [...h, l].slice(-3) : h);
-  if (action.type === "interim")
-    return { history: archive(state.history, state.current), current: null, interim: action.text };
-  return { history: archive(state.history, state.current), current: action.line, interim: null };
+  switch (action.type) {
+    case "interim":
+      return { history: archive(state.history, state.current), current: null, interim: action };
+    case "clearInterim":
+      return { ...state, interim: null };
+    case "final":
+      if (state.current?.id === action.line.id || state.history.some((l) => l.id === action.line.id)) return state;
+      return { history: archive(state.history, state.current), current: action.line, interim: null };
+    case "history": {
+      const lines = action.lines.slice(-4);
+      return { history: lines.slice(0, -1), current: lines.at(-1) ?? null, interim: null };
+    }
+  }
 }
 
 function parse<T>(raw: string, fallback: T): T {
@@ -39,9 +56,19 @@ function Marked({ text }: { text: string }) {
   );
 }
 
-let lineSeq = 0;
+/** Who said it: nothing for your own speech, a name for others, and a chip for typed replies. */
+function Who({ line }: { line: Pick<Line, "kind" | "speaker" | "mine"> }) {
+  if (line.kind === "typed") return <span className={s.who}>{line.mine ? "Typed reply" : `${line.speaker} · typed`}</span>;
+  if (!line.mine) return <span className={`${s.who} ${s.whoOther}`}>{line.speaker}</span>;
+  return null;
+}
+
+let localSeq = 0;
 
 export function Room() {
+  const code = useStored(KEYS.room, "WORK-482");
+  const name = useStored(KEYS.name, "") || "Participant";
+
   const prefsRaw = useStored(KEYS.prefs, "");
   const prefs = useMemo<Prefs>(() => ({ ...DEFAULT_PREFS, ...parse<Partial<Prefs>>(prefsRaw, {}) }), [prefsRaw]);
   const setPref = (p: Partial<Prefs>) => store.setJson(KEYS.prefs, { ...prefs, ...p });
@@ -49,26 +76,79 @@ export function Room() {
   const detailsRaw = useStored(KEYS.details, "");
   const details = useMemo(() => parse<Row[]>(detailsRaw, []), [detailsRaw]);
 
+  const mode = useStored(KEYS.mode, "live") === "demo" ? "demo" : "live";
   const [listening, setListening] = useState(false);
+  const [error, setError] = useState("");
+  const [participants, setParticipants] = useState(1);
   const [stream, dispatch] = useReducer(streamReducer, { history: [], current: null, interim: null });
   const [announce, setAnnounce] = useState("");
   const [notice, setNotice] = useState("");
   const [reply, setReply] = useState("");
+  const mySid = useRef<number | null>(null);
 
-  const handlers: CaptionHandlers = {
-    onInterim: (text) => dispatch({ type: "interim", text }),
-    onFinal: (text) => {
-      const line = text.trim();
-      if (!line) return;
-      dispatch({ type: "final", line: { id: ++lineSeq, kind: "speech", text: line } });
-      setAnnounce(line);
-      // Read the latest saved list, not the render-time copy: lines can land between renders.
-      const saved = store.json<Row[]>(KEYS.details, []);
-      const fresh = detect(line).filter((d) => !saved.some((r) => r.label.toLowerCase() === d.label.toLowerCase()));
-      if (fresh.length) store.setJson(KEYS.details, [...saved, ...fresh.map((d) => ({ ...d, id: rowId() }))]);
-    },
+  /** Every finished line, from anyone, is scanned for dates, times and follow-ups. */
+  function recordLine(line: Line) {
+    dispatch({ type: "final", line });
+    setAnnounce(line.kind === "typed" ? `${line.mine ? "You" : line.speaker} typed: ${line.text}` : line.text);
+    if (line.kind === "typed" && line.mine) store.set(KEYS.reply, line.text);
+    // Read the latest saved list, not the render-time copy: lines can land between renders.
+    const saved = store.json<Row[]>(KEYS.details, []);
+    const fresh = detect(line.text).filter((d) => !saved.some((r) => r.label.toLowerCase() === d.label.toLowerCase()));
+    if (fresh.length) store.setJson(KEYS.details, [...saved, ...fresh.map((d) => ({ ...d, id: rowId() }))]);
+  }
+
+  const toLine = (e: CaptionEvent): Line => ({ id: `s${e.id}`, kind: e.kind, text: e.text, speaker: e.speaker, mine: e.sid === mySid.current });
+
+  const socket = useRoomSocket(code, name, (e: ServerEvent) => {
+    if (e.type === "welcome") mySid.current = e.sid;
+    else if (e.type === "presence") setParticipants(e.participants);
+    else if (e.type === "history") dispatch({ type: "history", lines: e.lines.map(toLine) });
+    else if (e.type === "error") {
+      setError(e.message);
+      setListening(false);
+    } else if (e.type === "caption") {
+      if (e.final) recordLine(toLine(e));
+      else if (e.text) dispatch({ type: "interim", text: e.text, speaker: e.speaker, mine: e.sid === mySid.current });
+      else dispatch({ type: "clearInterim" });
+    }
+  });
+  const online = socket.status === "open";
+
+  // Demo mode: scripted lines, shown only in this browser.
+  const demoHandlers: CaptionHandlers = {
+    onInterim: (text) => dispatch({ type: "interim", text, speaker: name, mine: true }),
+    onFinal: (text) => recordLine({ id: `l${++localSeq}`, kind: "speech", text, speaker: name, mine: true }),
   };
-  useDemoCaptions(listening, prefs.pace, handlers);
+  useDemoCaptions(listening && mode === "demo", prefs.pace, demoHandlers);
+
+  // Live mode: our microphone goes to faster-whisper; captions come back to everyone.
+  const live = listening && mode === "live";
+  const { send } = socket; // stable; the socket object itself changes every render
+  useEffect(() => {
+    if (!live) return;
+    send({ type: "audio_start", interim: prefs.pace === "instant" });
+    return () => {
+      send({ type: "audio_stop" });
+    };
+  }, [live, prefs.pace, send]);
+  useMic(live, socket.sendAudio, (err) => {
+    setError(micErrorMessage(err));
+    setListening(false);
+  });
+
+  function toggleListening() {
+    setError("");
+    if (listening) return setListening(false);
+    if (mode === "live" && !online)
+      return setError("Live captions need the m’aso AI service, and it isn’t reachable. Start it, or switch to demo captions.");
+    setListening(true);
+  }
+
+  function switchMode() {
+    setListening(false);
+    setError("");
+    store.set(KEYS.mode, mode === "live" ? "demo" : "live");
+  }
 
   // Display pop-over closes on Escape or a click outside it.
   const displayRef = useRef<HTMLDetailsElement>(null);
@@ -99,15 +179,23 @@ export function Room() {
       document.getElementById("replyInput")?.focus();
       return;
     }
-    dispatch({ type: "final", line: { id: ++lineSeq, kind: "typed", text } });
-    setAnnounce(`Typed reply: ${text}`);
+    // Shared rooms echo the reply back to everyone, us included; offline we show it locally.
+    if (!(mode === "live" && socket.send({ type: "reply", text })))
+      recordLine({ id: `l${++localSeq}`, kind: "typed", text, speaker: name, mine: true });
     setNotice("Sent to everyone in the room.");
-    store.set(KEYS.reply, text);
     setReply("");
   }
 
   const { history, current, interim } = stream;
   const idle = interim === null && current === null;
+  const stateLabel = listening ? (mode === "live" ? "Listening" : "Playing demo") : mode === "live" && online ? `${participants} in room` : "Paused";
+  const listenLabel = listening ? "Stop listening" : mode === "live" ? "Start listening" : "Play demo captions";
+  const sourceNote =
+    mode === "live"
+      ? online
+        ? "Everyone in the room sees these captions. m’aso’s own speech model (faster-whisper) transcribes the microphone; audio is never stored or sent to anyone else."
+        : "Connecting to the m’aso AI service… Typed replies still work on this screen."
+      : "Everyone in the room sees these captions. Sample lines play instead of your microphone.";
 
   return (
     <>
@@ -135,12 +223,12 @@ export function Room() {
           aria-label="Captions"
         >
           <div className={s.roomtop}>
-            <span className="tag is-demo" id="modeTag">
-              Demo captions · simulated
+            <span className={`tag ${mode === "demo" ? "is-demo" : ""}`} id="modeTag">
+              {mode === "live" ? "Live · faster-whisper" : "Demo captions · simulated"}
             </span>
             <div className={s.topright}>
               <span className={`live ${listening ? "pulse" : "idle"}`} id="liveState">
-                {listening ? "Playing demo" : "Paused"}
+                {stateLabel}
               </span>
               <details className={s.display} ref={displayRef} id="display">
                 <summary>
@@ -199,28 +287,23 @@ export function Room() {
           <div className={s.stream}>
             <ol className={s.history} aria-label="Earlier lines">
               {history.map((l) => (
-                <li key={l.id} className={l.kind === "typed" ? s.typed : ""}>
-                  {l.kind === "typed" ? (
-                    <>
-                      <span className={s.who}>Typed reply</span>
-                      {l.text}
-                    </>
-                  ) : (
-                    <Marked text={l.text} />
-                  )}
+                <li key={l.id}>
+                  <Who line={l} />
+                  {l.kind === "typed" ? l.text : <Marked text={l.text} />}
                 </li>
               ))}
             </ol>
-            <p className={`${s.caption} ${idle ? s.idle : ""} ${current?.kind === "typed" ? s.typed : ""}`} id="caption">
-              {interim !== null ? (
-                <span className={s.interim}>{interim}</span>
-              ) : current?.kind === "typed" ? (
+            <p className={`${s.caption} ${idle ? s.idle : ""} ${current?.kind === "typed" && !interim ? s.typed : ""}`} id="caption">
+              {interim ? (
                 <>
-                  <span className={s.who}>Typed reply</span>
-                  {current.text}
+                  <Who line={{ kind: "speech", speaker: interim.speaker, mine: interim.mine }} />
+                  <span className={s.interim}>{interim.text}</span>
                 </>
               ) : current ? (
-                <Marked text={current.text} />
+                <>
+                  <Who line={current} />
+                  {current.kind === "typed" ? current.text : <Marked text={current.text} />}
+                </>
               ) : (
                 "Captions will appear here once you start listening."
               )}
@@ -231,14 +314,22 @@ export function Room() {
           </p>
 
           <div className={s.capcontrols}>
-            <button className={s.listen} id="listenBtn" type="button" aria-pressed={listening} onClick={() => setListening((v) => !v)}>
+            <button className={s.listen} id="listenBtn" type="button" aria-pressed={listening} onClick={toggleListening}>
               <Icon name="mic" />
-              <span>{listening ? "Stop listening" : "Play demo captions"}</span>
+              <span>{listenLabel}</span>
+            </button>
+            <button className={`linkbtn ${s.ondark}`} id="modeBtn" type="button" onClick={switchMode}>
+              {mode === "live" ? "Use demo captions" : "Use my microphone"}
             </button>
           </div>
           <p className={s.source} id="sourceNote">
-            Everyone in the room sees these captions. Sample lines play instead of your microphone.
+            {sourceNote}
           </p>
+          {error && (
+            <p className={s.capError} role="alert" id="errorNote">
+              {error}
+            </p>
+          )}
 
           <form className={s.reply} onSubmit={sendReply}>
             <label className="sr" htmlFor="replyInput">

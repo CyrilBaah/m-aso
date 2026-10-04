@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { EditableList, type Row } from "@/components/EditableList";
 import { Arrow, Icon } from "@/components/Icon";
+import { deleteRoom } from "@/lib/ai";
 import { KEYS, resetSession, store, useStored } from "@/lib/store";
 import s from "./summary.module.css";
 
@@ -72,7 +73,10 @@ export function SummaryCard() {
         <Link className="btn primary" href="/complete?status=saved">
           Save summary <Arrow />
         </Link>
-        <Link className="btn ghost" href="/complete?status=deleted" onClick={() => resetSession()} id="deleteBtn">
+        <Link className="btn ghost" href="/complete?status=deleted" onClick={() => {
+            deleteRoom(store.get(KEYS.room) ?? "");
+            resetSession();
+          }} id="deleteBtn">
           <Icon name="trash" />
           Delete session
         </Link>

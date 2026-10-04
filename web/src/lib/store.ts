@@ -48,6 +48,7 @@ export const KEYS = {
   summary: "maso_summary",
   prefs: "maso_prefs",
   mode: "maso_mode",
+  name: "maso_name",
 } as const;
 
 /** Everything a session leaves behind. Cleared on a new room or on delete. */

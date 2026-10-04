@@ -20,7 +20,7 @@ def test_pause_ends_an_utterance():
     jobs = seg.feed(pcm(0.5, loud=False) + pcm(1.5, loud=True) + pcm(1.0, loud=False))
     finals = [j for j in jobs if j.final]
     assert len(finals) == 1
-    assert 1.5 <= len(finals[0].audio) / SAMPLE_RATE <= 2.4  # speech plus the trailing pause
+    assert 1.5 <= len(finals[0].audio) / SAMPLE_RATE <= 2.7  # pre-roll, speech and the trailing pause
 
 
 def test_long_speech_is_cut_and_interims_arrive_while_talking():

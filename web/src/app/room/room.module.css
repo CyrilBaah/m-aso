@@ -18,6 +18,7 @@
 .history mark,.caption mark{background:var(--yellow);color:var(--ink);border-radius:6px;padding:0 5px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .history mark{background:#e9f00033;color:#fff}
 .who{display:inline-block;margin-right:8px;padding:2px 8px;border-radius:var(--r-pill);background:var(--blue);color:#fff;font-size:11px;font-weight:800;letter-spacing:.03em;vertical-align:middle;line-height:1.6}
+.whoOther{background:#ffffff24;color:#fff}
 .caption{max-width:22ch;font-size:calc(clamp(30px,3.9vw,54px) * var(--cap));font-weight:700;line-height:1.2;letter-spacing:-.025em;margin:0;min-height:2.4em;overflow-wrap:anywhere}
 .idle{color:#8f99a7;font-weight:600}
 .typed .who{font-size:13px;vertical-align:.35em}

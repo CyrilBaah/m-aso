@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections import deque
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -93,7 +94,7 @@ class Job:
 class Segmenter:
     """Energy-based utterance detection, tuned for a laptop mic in a quiet room."""
 
-    silence_to_end: float = 0.7  # seconds of quiet that end an utterance
+    silence_to_end: float = 0.8  # seconds of quiet that end an utterance
     max_utterance: float = 12.0  # force a cut so long speeches still caption
     min_utterance: float = 0.35  # ignore clicks and coughs
     interim_every: float = 1.2  # seconds between interim transcripts
@@ -105,6 +106,7 @@ class Segmenter:
     _since_interim: int = 0
     _noise: float = 0.004
     _carry: bytes = b""  # half of an int16 sample split across messages
+    _preroll: deque = field(default_factory=lambda: deque(maxlen=10))  # 300 ms before speech starts
 
     @property
     def _length(self) -> int:
@@ -126,7 +128,11 @@ class Segmenter:
             if not speaking:
                 self._noise = 0.95 * self._noise + 0.05 * rms  # track the room's noise floor
             if self._speech == 0 and not speaking:
-                continue  # waiting for speech to start
+                self._preroll.append(frame)  # soft word starts ("p", "f", "h") sit below the threshold
+                continue
+            if self._speech == 0:
+                self._buf.extend(self._preroll)
+                self._preroll.clear()
             self._buf.append(frame)
             self._since_interim += FRAME
             if speaking:

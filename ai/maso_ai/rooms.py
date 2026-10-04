@@ -24,11 +24,12 @@ class Line:
     id: int
     kind: LineKind
     speaker: str
+    sid: int  # connection that produced the line, so each browser can label its own lines "You"
     text: str
     at: float = field(default_factory=time.time)
 
     def as_event(self) -> dict:
-        return {"type": "caption", "id": self.id, "kind": self.kind, "speaker": self.speaker, "text": self.text, "final": True}
+        return {"type": "caption", "id": self.id, "kind": self.kind, "speaker": self.speaker, "sid": self.sid, "text": self.text, "final": True}
 
 
 @dataclass
@@ -39,9 +40,9 @@ class Room:
     touched: float = field(default_factory=time.time)
     _seq: int = 0
 
-    def add_line(self, kind: LineKind, speaker: str, text: str) -> Line:
+    def add_line(self, kind: LineKind, speaker: str, sid: int, text: str) -> Line:
         self._seq += 1
-        line = Line(self._seq, kind, speaker, text)
+        line = Line(self._seq, kind, speaker, sid, text)
         self.lines.append(line)
         self.touched = time.time()
         return line

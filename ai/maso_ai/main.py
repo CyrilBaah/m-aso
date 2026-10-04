@@ -76,11 +76,11 @@ async def caption_worker(room: Room, speaker: str, sid: int, jobs: asyncio.Queue
         text = await asyncio.to_thread(whisper.transcribe, job.audio)
         if job.final:
             if text:
-                await room.broadcast(room.add_line("speech", speaker, text).as_event())
+                await room.broadcast(room.add_line("speech", speaker, sid, text).as_event())
             else:
-                await room.broadcast({"type": "caption", "id": f"live-{sid}", "kind": "speech", "speaker": speaker, "text": "", "final": False})
+                await room.broadcast({"type": "caption", "id": f"live-{sid}", "kind": "speech", "speaker": speaker, "sid": sid, "text": "", "final": False})
         elif text:
-            await room.broadcast({"type": "caption", "id": f"live-{sid}", "kind": "speech", "speaker": speaker, "text": text, "final": False})
+            await room.broadcast({"type": "caption", "id": f"live-{sid}", "kind": "speech", "speaker": speaker, "sid": sid, "text": text, "final": False})
 
 
 @app.websocket("/rooms/{code}/ws")
@@ -94,6 +94,7 @@ async def room_socket(ws: WebSocket, code: str, name: str = "Participant") -> No
     speaker = name[:40] or "Participant"
     sid = next(_socket_ids)
     room.clients[ws] = speaker
+    await ws.send_json({"type": "welcome", "sid": sid, "whisper": whisper.status})
     await ws.send_json({"type": "history", "lines": [l.as_event() for l in room.lines[-20:]]})
     await room.announce_presence()
 
@@ -116,7 +117,7 @@ async def room_socket(ws: WebSocket, code: str, name: str = "Participant") -> No
             if kind == "reply":
                 text = str(event.get("text", "")).strip()[:500]
                 if text:
-                    await room.broadcast(room.add_line("typed", speaker, text).as_event())
+                    await room.broadcast(room.add_line("typed", speaker, sid, text).as_event())
             elif kind == "audio_start":
                 if not whisper.ready:
                     await ws.send_json({"type": "error", "code": "whisper_" + whisper.status, "message": whisper_message()})

@@ -4,6 +4,11 @@
 .status :global(.chips){margin-top:auto;padding-top:26px}
 .code{color:var(--yellow)}
 .list{margin-top:clamp(4px,1vh,12px)}
+.name{margin-top:clamp(14px,2.6vh,24px)}
+.name label{color:var(--on-dark-muted);font-weight:700}
+.name input{background:var(--ink-raised);border-color:#303944;color:#fff}
+.name input::placeholder{color:#8f99a7}
+.name input:focus{border-color:var(--yellow);box-shadow:0 0 0 4px #e9f00026}
 @media(max-width:760px){
   .panel{grid-template-columns:1fr}
   .status :global(.live){margin-bottom:28px}
