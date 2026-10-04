@@ -1,0 +1,12 @@
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:var(--vgap) auto 0;width:100%;max-width:780px}
+.choice{display:flex;flex-direction:column;min-height:clamp(220px,32vh,300px)}
+.choice :global(.tile){margin-bottom:clamp(14px,2.6vh,26px)}
+.choice :global(.body){max-width:32ch}
+.choice>:global(.btn){margin-top:auto;align-self:flex-start}
+.joinform{display:flex;flex-direction:column;gap:12px;margin-top:clamp(12px,2vh,20px)}
+.joinform :global(.btn){align-self:flex-start}
+@media(max-width:700px){
+  .choices{grid-template-columns:1fr}
+  .choice{min-height:auto}
+  .choice>:global(.btn){margin-top:24px}
+}

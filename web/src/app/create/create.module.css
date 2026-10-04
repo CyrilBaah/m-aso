@@ -1,0 +1,5 @@
+.share{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;text-align:center;color:var(--muted);font-size:var(--fs-small);margin:0}
+.link{color:var(--ink);font-weight:700}
+.waiting{margin-top:var(--vgap)}
+.waiting :global(.item){padding-left:0}
+.waiting :global(.item:hover){transform:none;background:none}

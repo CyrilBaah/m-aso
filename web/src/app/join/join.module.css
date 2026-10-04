@@ -1,0 +1,7 @@
+.hint{text-align:center;color:var(--muted);font-size:var(--fs-small);margin:0}
+.hint.error{color:#b02a17;font-weight:700}
+.status{margin-top:var(--vgap)}
+.status :global(.item){padding-left:0}
+.status :global(.item:hover){transform:none;background:none}
+.found :global(.dot){background:var(--mint);animation:ringPulse 2.2s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.found :global(.dot){animation:none}}
