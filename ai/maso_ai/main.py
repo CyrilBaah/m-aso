@@ -10,15 +10,18 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 from . import config
 from .rooms import Room, RoomHub
+from .summarization import Gemma, GemmaUnavailable
 from .transcription import Job, Segmenter, Transcriber
 
 CODE = re.compile(r"^[A-Z]{4}-[0-9]{3}$")
 
 hub = RoomHub()
 whisper = Transcriber(config.WHISPER_MODEL)
+gemma = Gemma(config.OLLAMA_URL, config.GEMMA_MODEL)
 _socket_ids = itertools.count(1)
 
 
@@ -41,11 +44,12 @@ def valid_code(code: str) -> str:
 
 
 @app.get("/health")
-def health() -> dict:
+async def health() -> dict:
     return {
         "status": "ok",
         "rooms": len(hub.rooms),
         "whisper": {"model": whisper.model_name, "status": whisper.status, "error": whisper.error},
+        "gemma": {"model": gemma.model, "status": await gemma.status()},
     }
 
 
@@ -61,6 +65,38 @@ def room_info(code: str) -> dict:
     if room is None:
         raise HTTPException(status_code=404, detail="No room with that code is open.")
     return {"code": room.code, "participants": len(room.clients), "lines": len(room.lines)}
+
+
+class SpokenLine(BaseModel):
+    speaker: str = Field(default="Participant", max_length=40)
+    kind: str = Field(default="speech", pattern="^(speech|typed)$")
+    text: str = Field(max_length=1000)
+
+
+class SummaryRequest(BaseModel):
+    # The browser's own copy of the conversation, used when this service has no transcript
+    # for the room (demo captions, or the service restarted mid-conversation).
+    lines: list[SpokenLine] = Field(default_factory=list, max_length=2000)
+
+
+@app.post("/rooms/{code}/summary")
+async def summarise_room(code: str, body: SummaryRequest) -> dict:
+    room = hub.get(valid_code(code))
+    if room is not None and room.lines:
+        transcript, source = room.transcript(), "room"
+    else:
+        tag = {"speech": "said", "typed": "typed"}
+        transcript = "\n".join(f"{l.speaker} ({tag[l.kind]}): {l.text}" for l in body.lines if l.text.strip())
+        source = "browser"
+    if not transcript.strip():
+        raise HTTPException(status_code=409, detail="Nothing was said in this room yet, so there is nothing to summarise.")
+    try:
+        summary = await gemma.summarise(transcript)
+    except GemmaUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return {"summary": summary, "source": source, "model": gemma.model}
 
 
 @app.delete("/rooms/{code}", status_code=204)

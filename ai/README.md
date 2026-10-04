@@ -4,6 +4,7 @@ FastAPI service behind the m’aso web app. Everything runs on this machine; no 
 
 - **Rooms:** shared conversation rooms over WebSocket, held in memory only.
 - **Live captions:** the browser streams 16 kHz audio; faster-whisper turns each spoken phrase into a caption for everyone in the room. Audio is never written to disk.
+- **Summaries:** at the end of a conversation Gemma (via Ollama) turns the transcript into decisions, action items, key dates and open questions. It is told to record only what was said.
 
 ## Set up
 
@@ -14,13 +15,21 @@ uv sync
 
 The first start downloads the Whisper model (`small.en`, about 480 MB) into `~/.cache/huggingface`.
 
+For summaries, install Ollama and pull Gemma once:
+
+```bash
+brew install ollama
+ollama serve            # or open the Ollama app
+ollama pull gemma3:4b   # about 3.3 GB
+```
+
 ## Run
 
 ```bash
 uv run uvicorn maso_ai.main:app --reload --port 8000
 ```
 
-`GET /health` reports whether the Whisper model is `loading`, `ready` or in `error`.
+`GET /health` reports whether Whisper is `loading`, `ready` or in `error`, and whether Gemma is `ready`, `missing_model` or `offline`.
 
 ## Test
 
