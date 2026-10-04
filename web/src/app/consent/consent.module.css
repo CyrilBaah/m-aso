@@ -1,0 +1,10 @@
+.panel{display:grid;grid-template-columns:.85fr 1.15fr;gap:16px;margin:var(--vgap) auto 0;width:100%;max-width:880px}
+.status{display:flex;flex-direction:column}
+.status :global(.live){margin-bottom:var(--vgap)}
+.status :global(.chips){margin-top:auto;padding-top:26px}
+.code{color:var(--yellow)}
+.list{margin-top:clamp(4px,1vh,12px)}
+@media(max-width:760px){
+  .panel{grid-template-columns:1fr}
+  .status :global(.live){margin-bottom:28px}
+}

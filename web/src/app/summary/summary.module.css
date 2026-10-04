@@ -1,0 +1,24 @@
+.grid{display:grid;grid-template-columns:.75fr 1.25fr;grid-template-rows:minmax(0,1fr);gap:16px;margin:var(--vgap) auto 0;width:100%;max-width:900px;align-items:start;min-height:0}
+.done{min-height:clamp(240px,36vh,330px)}
+.done :global(.tile){margin-bottom:var(--vgap)}
+.done :global(.eyebrow){margin-bottom:12px}
+.list{list-style:none;padding:0;margin-top:clamp(12px,2vh,22px)}
+.list :global(.summaryrow){display:flex;gap:10px;align-items:flex-start;padding:clamp(11px,1.7vh,17px) 18px}
+.list :global(.summaryrow .rowbody){display:block}
+.list :global(.summaryrow .rowtools){margin-top:2px}
+.list :global(.summaryrow b){display:flex;align-items:center;gap:8px}
+.list :global(.summaryrow b .tag){letter-spacing:.02em;text-transform:none;padding:2px 8px}
+.list :global(.summaryrow.editing){background:var(--surface)}
+.intro :global(.tag){vertical-align:1px;padding:2px 8px}
+@media(min-width:761px) and (min-height:560px){
+  .page{height:calc(100dvh - var(--nav-h));min-height:0;flex:none}
+  .grid{flex:0 1 auto}
+  .card{max-height:100%;display:flex;flex-direction:column}
+  .list{flex:0 1 auto;min-height:0;overflow:auto;scrollbar-width:thin;margin-right:-8px;padding-right:8px}
+  .card :global(.actions){flex:none}
+}
+@media(max-width:760px){
+  .grid{grid-template-columns:1fr}
+  .done{min-height:auto}
+  .done :global(.tile){margin-bottom:28px}
+}
