@@ -1,0 +1,7 @@
+.DS_Store
+# Python AI service
+ai/.venv/
+__pycache__/
+*.pyc
+ai/models/
+.env

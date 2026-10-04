@@ -1,0 +1,92 @@
+/* m’aso design tokens
+   Extracted from the original index.html, the brand standard. Imported first by the root layout.
+   Documented in DESIGN.md. Primitives are raw values; semantic tokens say where to use them. */
+
+:root{
+  /* Palette: primitives */
+  --yellow:#e9f000;
+  --yellow-deep:#b9be00;     /* pressed edge under yellow buttons */
+  --yellow-tint:#fff9c9;     /* room codes, notices */
+  --yellow-line:#d9cf3a;
+  --blue:#4169ff;
+  --blue-action:#3d63fa;     /* filled blue buttons: white text 4.8:1 */
+  --blue-deep:#2c47b5;       /* pressed edge under blue buttons */
+  --blue-tint:#dce4ff;
+  --coral:#ff5d47;
+  --coral-tint:#ffd7d0;
+  --mint:#5bd394;            /* live / connected dot */
+  --mint-soft:#9fe3c2;       /* live label on dark */
+  --mint-ink:#17703f;        /* live label on light (4.5:1 on white) */
+
+  --ink:#080b0d;
+  --ink-2:#151b24;
+  --ink-3:#202a3b;
+  --ink-raised:#1d2530;      /* inputs and chips on dark panels */
+  --ink-line:#ffffff23;
+
+  --bg:#f4f4f2;
+  --surface:#fff;
+  --surface-soft:#fafaf7;
+  --line:#e4e4e1;
+  --line-strong:#d8d8d5;
+  --muted:#62656b;
+  --on-dark:#fff;
+  --on-dark-muted:#abb4c1;
+
+  /* Typography */
+  --font:var(--font-inter),'Inter',Arial,sans-serif;
+  --fs-display:clamp(47px,7.1vw,91px);   /* landing hero */
+  --fs-title:clamp(42px,6.4vw,80px);     /* page titles in the flow */
+  --fs-section:clamp(36px,4.2vw,47px);
+  --fs-card:27px;
+  --fs-lead:18px;
+  --fs-body:14px;
+  --fs-small:13px;
+  --fs-label:12px;
+  --track-display:-.05em;
+  --track-title:-.045em;
+  --track-card:-.03em;
+  --track-label:.14em;
+
+  /* Shape */
+  --r-sm:14px;      /* inputs */
+  --r-md:18px;      /* icon tiles, room codes */
+  --r-lg:26px;      /* cards */
+  --r-xl:32px;      /* dark panels, showcase */
+  --r-nav:28px;
+  --r-pill:999px;
+
+  /* Depth */
+  --shadow-card:0 15px 35px #080b0d0b;
+  --shadow-lift:0 18px 35px #151b2f18;
+  --shadow-panel:0 24px 60px #080b0d2b;
+  --press-yellow:0 7px 0 var(--yellow-deep),0 13px 25px #c6c90055,inset 0 2px 0 #ffff8a;
+  --press-yellow-hover:0 10px 0 #abb100,0 20px 30px #c6c90066,inset 0 2px 0 #ffff8a;
+  --press-blue:0 7px 0 var(--blue-deep),0 13px 25px #4169ff33;
+  --press-blue-hover:0 10px 0 var(--blue-deep),0 20px 30px #4169ff44;
+  --press-ghost:0 7px 0 #cfcfca,0 13px 25px #080b0d14;
+  --press-ghost-hover:0 10px 0 #c2c2bc,0 20px 30px #080b0d1c;
+
+  /* Layout */
+  --shell:1260px;
+  --gutter:22px;
+  --nav-h:clamp(60px,8.5vh,76px);
+  --vgap:clamp(14px,3.6vh,46px);     /* vertical rhythm that shrinks on short screens */
+  --vpad:clamp(18px,4.5vh,72px);     /* page top/bottom padding */
+
+  /* Motion */
+  --ease-out:cubic-bezier(.2,.8,.2,1);
+  --dur-fast:.2s;
+  --dur:.35s;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font:inherit}
+
+.skip{position:absolute;left:14px;top:-60px;background:var(--yellow);color:var(--ink);padding:12px 16px;border-radius:0 0 12px 12px;font-weight:800;text-decoration:none;z-index:20}
+.skip:focus{top:0}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:4px solid var(--coral);outline-offset:4px}
+
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
