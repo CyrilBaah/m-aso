@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 ai/models/
 .env
+
+# Recorded demos
+demo/
