@@ -1,0 +1,12 @@
+/* Full-screen board for showing a typed message: flat black, white type, nothing else competing. */
+.board{position:fixed;inset:0;z-index:100;background:#000;color:#fff;display:flex;flex-direction:column;padding:clamp(16px,3vmin,32px)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;color:#c9ced6;font-size:var(--fs-small);font-weight:600}
+.actions{display:flex;gap:10px}
+.ghost,.done{min-height:44px;padding:10px 18px;border-radius:var(--r-pill);font-size:var(--fs-small);font-weight:800}
+.ghost{background:transparent;color:#fff;border:1px solid #ffffff55}
+.ghost:disabled{opacity:.4;cursor:not-allowed}
+.done{background:var(--yellow);color:var(--ink);border:0}
+.text{flex:1;width:100%;margin-top:clamp(12px,2vmin,24px);background:transparent;color:#fff;border:0;outline:none;resize:none;font:inherit;font-weight:800;line-height:1.12;letter-spacing:-.02em;overflow-wrap:anywhere}
+.text::placeholder{color:#5d636b}
+.board button:focus-visible{outline:4px solid var(--yellow);outline-offset:3px}
+.text:focus-visible{outline:none}

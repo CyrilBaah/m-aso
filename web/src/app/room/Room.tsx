@@ -11,6 +11,7 @@ import { NoRoom } from "@/components/NoRoom";
 import { delay } from "@/lib/ui";
 import { useRoomSocket } from "@/lib/useRoomSocket";
 import { DEFAULT_PREFS, type Prefs } from "./types";
+import { ShowOnScreen } from "./ShowOnScreen";
 import { micErrorMessage, useMic } from "./useMic";
 import s from "./room.module.css";
 
@@ -171,6 +172,13 @@ export function Room() {
     };
   }, []);
 
+  /** The room echoes a message back to everyone, us included, and that echo is what we show. */
+  function sendMessage(text: string): boolean {
+    if (socket.send({ type: "reply", text })) return true;
+    setNotice("Not sent: the m’aso service isn’t reachable. Your message is still in the box.");
+    return false;
+  }
+
   function sendReply(e: React.FormEvent) {
     e.preventDefault();
     const text = reply.trim();
@@ -178,11 +186,7 @@ export function Room() {
       document.getElementById("replyInput")?.focus();
       return;
     }
-    // The room echoes the message back to everyone, us included, and that echo is what we show.
-    if (!socket.send({ type: "reply", text })) {
-      setNotice("Not sent: the m’aso service isn’t reachable. Your message is still in the box.");
-      return;
-    }
+    if (!sendMessage(text)) return;
     setNotice("Sent to everyone in the room.");
     setReply("");
   }
@@ -321,6 +325,14 @@ export function Room() {
               <Icon name="mic" />
               <span>{listening ? "Stop listening" : "Start listening"}</span>
             </button>
+            <ShowOnScreen
+              className={s.listen}
+              onSend={(text) => {
+                // Shown messages join the conversation; offline they still count on this screen.
+                if (!socket.send({ type: "reply", text }))
+                  recordLine({ id: `l${Date.now()}`, kind: "typed", text, speaker: name, mine: true });
+              }}
+            />
           </div>
           <p className={s.source} id="sourceNote">
             {sourceNote}
