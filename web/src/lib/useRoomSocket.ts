@@ -27,6 +27,8 @@ export function useRoomSocket(code: string, name: string, onEvent: (e: ServerEve
       ws.current = socket;
       socket.onopen = () => {
         retry = 0;
+        // The name may have changed while connecting; make sure the room has the current one.
+        socket.send(JSON.stringify({ type: "rename", name: nameRef.current }));
         setStatus("open");
       };
       socket.onmessage = (e) => {
