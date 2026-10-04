@@ -31,13 +31,13 @@ test("create, join, consent and caption a live conversation between two people",
   await ama.goto(`${base}/create`);
   await expect(ama.locator(".roomcode")).toHaveText(/^[A-Z]{4}-\d{3}$/);
   const code = (await ama.locator(".roomcode").textContent())!;
-  await expect(ama.getByText("Waiting for your colleague")).toBeVisible();
+  await expect(ama.getByText("Waiting for your teammate")).toBeVisible();
 
   // Kofi joins with the code; Ama sees him arrive
   await kofi.goto(`${base}/join?code=${code}`);
   await expect(kofi.locator("#joinStatus")).toContainText("1 person is already in the room");
   await kofi.getByRole("button", { name: "Join room" }).click();
-  await expect(ama.getByText("Your colleague has joined")).toBeVisible();
+  await expect(ama.getByText("Your teammate has joined")).toBeVisible();
 
   // Both name themselves and see each other on the consent screen
   await ama.getByRole("link", { name: "Continue to consent" }).click();
@@ -58,7 +58,7 @@ test("create, join, consent and caption a live conversation between two people",
   await expect(kofi.locator("aside li.item b").filter({ hasText: /thursday/i })).toBeVisible();
 
   // Kofi replies by typing; Ama reads it
-  await kofi.getByLabel("Type a reply").fill("Thanks, I can follow that.");
+  await kofi.getByLabel("Type a message").fill("Thanks, I can follow that.");
   await kofi.keyboard.press("Enter");
   await expect(ama.locator("#livecard")).toContainText("Kofi · typed");
   await ama.getByRole("button", { name: "Stop listening" }).click();

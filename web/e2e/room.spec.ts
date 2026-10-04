@@ -45,8 +45,8 @@ test("the room says so plainly when the service is unreachable", async ({ page }
   await expect(page.locator("#liveState")).toHaveText("Connecting…");
   await page.getByRole("button", { name: "Start listening" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "isn’t reachable" })).toBeVisible();
-  await page.getByLabel("Type a reply").fill("Hello?");
+  await page.getByLabel("Type a message").fill("Hello?");
   await page.keyboard.press("Enter");
   await expect(page.locator("#replyNotice")).toContainText("Not sent");
-  await expect(page.getByLabel("Type a reply")).toHaveValue("Hello?");
+  await expect(page.getByLabel("Type a message")).toHaveValue("Hello?");
 });

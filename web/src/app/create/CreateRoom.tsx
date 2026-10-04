@@ -9,7 +9,7 @@ import { delay } from "@/lib/ui";
 import { useRoomSocket } from "@/lib/useRoomSocket";
 import s from "./create.module.css";
 
-/** Opens a room on the service, shares its code and shows when the colleague arrives. */
+/** Opens a room on the service, shares its code and shows when your teammate arrives. */
 export function CreateRoom() {
   const [code, setCode] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -33,7 +33,7 @@ export function CreateRoom() {
     };
   }, [attempt]);
 
-  // Holding the room open lets us see the moment the colleague joins.
+  // Holding the room open lets us see the moment your teammate joins.
   const socket = useRoomSocket(code ?? "", name, (e) => {
     if (e.type === "presence") setPresent(e.participants);
   });
@@ -101,7 +101,7 @@ export function CreateRoom() {
           <li className={`item ${joined ? s.joined : ""}`} role="status">
             <span className={`dot ${joined ? "" : "is-yellow"}`} />
             <div>
-              <b>{joined ? "Your colleague has joined" : socket.status === "open" ? "Waiting for your colleague" : "Opening the room…"}</b>
+              <b>{joined ? "Your teammate has joined" : socket.status === "open" ? "Waiting for your teammate" : "Opening the room…"}</b>
               <span>{joined ? "You can both continue to consent." : "They can join with the code or link above."}</span>
             </div>
           </li>

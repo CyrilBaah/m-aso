@@ -26,27 +26,27 @@ export default function Home() {
             <div className={`${s.shape} ${s.two}`} aria-hidden="true" />
             <div className={`${s.shape} ${s.three}`} aria-hidden="true" />
             <div className={`${s.shape} ${s.four}`} aria-hidden="true" />
-            <div className={s.eyebrow}>Communication access for the workplace</div>
+            <div className={s.eyebrow}>Built for a teammate who couldn’t hear us</div>
             <h1>
               Make room for <span className={s.highlight}>every voice.</span>
             </h1>
             <p>
-              m’aso gives Deaf and hard-of-hearing colleagues live captions, typed replies, and a private record of what
-              was agreed.
+              Our teammate couldn’t hear us, so we typed and turned the screen around. m’aso does it properly: live
+              captions, typing for everyone, and a note of what was agreed.
             </p>
-            <Link className={s.maincta} href="/start" aria-label="See how m’aso works">
-              <span>See how it works</span> <span className={s.arrow}>→</span>
+            <Link className={s.maincta} href="/start">
+              <span>Start a conversation</span> <span className={s.arrow}>→</span>
             </Link>
           </section>
 
           <section className={s.showcase} id="showcase">
             <div className={s.showcaseTitle}>
               <span>Speak, read,</span>
-              <span>and reply in</span>
+              <span>and type in</span>
               <span>your own way.</span>
             </div>
             <div className={s.showcaseSub}>
-              A shared workplace space for live captions and typed replies, with privacy built in from the start.
+              Open models run on your own laptop, so a private conversation between teammates stays private.
             </div>
             <div className={s.cards} aria-hidden="true">
               <div className={s.mock}>
@@ -61,7 +61,7 @@ export default function Home() {
               </div>
               <div className={s.mock}>
                 <div className={s.mocktop} />
-                <div className={s.mocklabel}>TWO-WAY REPLY</div>
+                <div className={s.mocklabel}>SHOW ON SCREEN</div>
                 <div className={`${s.mockline} ${s.dark}`} />
                 <div className={s.mockline} />
                 <div className={s.mockbubble}>I can follow that</div>

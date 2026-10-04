@@ -5,7 +5,8 @@ const DAY =
   "monday|tuesday|wednesday|thursday|friday|saturday|sunday|today|tomorrow|tonight|next week|this morning|this afternoon";
 // "2 PM", "2pm", "3 p.m." (a trailing sentence full stop is not swallowed), "10:30", "noon"
 const TIME = "\\d{1,2}(?::\\d{2})?\\s*[ap]\\.?m(?:(?<=\\.m)\\.)?|\\d{1,2}:\\d{2}|noon|midday";
-const WHEN_SOURCE = `\\b(?:(?:${DAY})(?:\\s+(?:at|by|before)\\s+(?:${TIME}))?|(?:${TIME}))(?!\\w)`;
+// "Thursday at 2 PM", "by Friday", and the other way round: "10:30 tomorrow", "2 PM on Thursday"
+const WHEN_SOURCE = `\\b(?:(?:${DAY})(?:\\s+(?:at|by|before)\\s+(?:${TIME}))?|(?:${TIME})(?:\\s+(?:on\\s+)?(?:${DAY}))?)(?!\\w)`;
 const TASK =
   /\b(?:i(?:'|’)ll|i will|we(?:'|’)ll|we will|please|can you|could you|need to|remember to|don(?:'|’)t forget to)\s+([^.?!]{3,70})/gi;
 

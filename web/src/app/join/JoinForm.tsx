@@ -9,7 +9,7 @@ import { KEYS, resetSession, store } from "@/lib/store";
 import { delay } from "@/lib/ui";
 import s from "./join.module.css";
 
-const HINT = "Room codes are four letters and three numbers, shared privately by your colleague.";
+const HINT = "Room codes are four letters and three numbers, shared privately by your teammate.";
 
 /** WORK482 / work-482 / “work 482” → WORK-482 */
 export function formatCode(raw: string) {
@@ -56,7 +56,7 @@ export function JoinForm({ initialCode }: { initialCode: string }) {
             tone: s.found,
           }
         : result.state === "missing"
-          ? { title: "No room with that code", text: "Check the code with your colleague. Rooms close when everyone leaves for two hours.", tone: s.missing }
+          ? { title: "No room with that code", text: "Check the code with your teammate. Rooms close when everyone leaves for two hours.", tone: s.missing }
           : { title: "Can’t reach the m’aso service", text: "Check that it’s running, then try again.", tone: s.missing };
 
   function submit(e: React.FormEvent) {

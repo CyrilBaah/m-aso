@@ -36,7 +36,7 @@ function rowsFrom(summary: Summary): SummaryRow[] {
 function capturedRows(details: Row[], reply: string): SummaryRow[] {
   return [
     ...details.map((d) => ({ id: `d-${d.id}`, label: d.tone === "is-blue" ? "Follow-up" : "Date or time", text: d.label })),
-    ...(reply ? [{ id: "reply", label: "Your last reply", text: reply }] : []),
+    ...(reply ? [{ id: "reply", label: "Your last message", text: reply }] : []),
   ];
 }
 

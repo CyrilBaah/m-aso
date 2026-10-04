@@ -13,11 +13,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "m’aso — Make workplace conversations easier to follow",
+    default: "m’aso — Make room for every voice",
     template: "%s — m’aso",
   },
   description:
-    "Live captions, typed replies and a private record of what was agreed, for Deaf and hard-of-hearing colleagues.",
+    "Built for a teammate who couldn’t hear us: live captions, typing for everyone and a note of what was agreed, all on your own laptop.",
 };
 
 export const viewport: Viewport = {

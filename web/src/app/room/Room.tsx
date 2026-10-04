@@ -58,9 +58,15 @@ function Marked({ text }: { text: string }) {
 
 /** Who said it: nothing for your own speech, a name for others, and a chip for typed replies. */
 function Who({ line }: { line: Pick<Line, "kind" | "speaker" | "mine"> }) {
-  if (line.kind === "typed") return <span className={s.who}>{line.mine ? "Typed reply" : `${line.speaker} · typed`}</span>;
+  if (line.kind === "typed") return <span className={s.who}>{line.mine ? "You · typed" : `${line.speaker} · typed`}</span>;
   if (!line.mine) return <span className={`${s.who} ${s.whoOther}`}>{line.speaker}</span>;
   return null;
+}
+
+/** "Kofi", "Kofi and Efua", "Kofi, Efua and Yaw" — unnamed people read as "your teammate". */
+function listNames(names: string[]) {
+  const shown = names.map((n) => (n === "Participant" ? "your teammate" : n));
+  return shown.length < 2 ? shown.join("") : `${shown.slice(0, -1).join(", ")} and ${shown.at(-1)}`;
 }
 
 const OFFLINE = "The m’aso service isn’t reachable, so live captions can’t start. Check that it’s running, then try again.";
@@ -80,6 +86,7 @@ export function Room() {
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
   const [participants, setParticipants] = useState(1);
+  const [names, setNames] = useState<string[]>([]);
   const [stream, dispatch] = useReducer(streamReducer, { history: [], current: null, interim: null });
   const [announce, setAnnounce] = useState("");
   const [notice, setNotice] = useState("");
@@ -104,7 +111,10 @@ export function Room() {
 
   const socket = useRoomSocket(code, name, (e: ServerEvent) => {
     if (e.type === "welcome") mySid.current = e.sid;
-    else if (e.type === "presence") setParticipants(e.participants);
+    else if (e.type === "presence") {
+      setParticipants(e.participants);
+      setNames(e.names);
+    }
     else if (e.type === "history") dispatch({ type: "history", lines: e.lines.map(toLine) });
     else if (e.type === "error") {
       setError(e.message);
@@ -168,9 +178,9 @@ export function Room() {
       document.getElementById("replyInput")?.focus();
       return;
     }
-    // The room echoes the reply back to everyone, us included, and that echo is what we show.
+    // The room echoes the message back to everyone, us included, and that echo is what we show.
     if (!socket.send({ type: "reply", text })) {
-      setNotice("Not sent: the m’aso service isn’t reachable. Your reply is still in the box.");
+      setNotice("Not sent: the m’aso service isn’t reachable. Your message is still in the box.");
       return;
     }
     setNotice("Sent to everyone in the room.");
@@ -180,6 +190,10 @@ export function Room() {
   if (hydrated && !code) return <NoRoom />;
 
   const { history, current, interim } = stream;
+  // Everyone in the room except us (one copy of our own name is ours).
+  const others = [...names];
+  const me = others.indexOf(name);
+  if (me >= 0) others.splice(me, 1);
   const idle = interim === null && current === null;
   const stateLabel = listening ? "Listening" : online ? `${participants} in room` : "Connecting…";
   const sourceNote = online
@@ -190,8 +204,8 @@ export function Room() {
     <>
       <header className={`${s.roomhead} rise`}>
         <div>
-          <div className="eyebrow">Active conversation</div>
-          <h1 className={s.roomtitle}>A clearer way to stay in the conversation.</h1>
+          <div className="eyebrow">Room {code}</div>
+          <h1 className={s.roomtitle}>{others.length ? `Talking with ${listNames(others)}` : "Waiting for your teammate"}</h1>
         </div>
         <div className={s.headactions}>
           <span className={`live on-light ${listening ? "pulse" : "idle"}`} id="headLive">
@@ -319,11 +333,11 @@ export function Room() {
 
           <form className={s.reply} onSubmit={sendReply}>
             <label className="sr" htmlFor="replyInput">
-              Type a reply
+              Type a message
             </label>
             <input
               id="replyInput"
-              placeholder="Type a reply for everyone to see…"
+              placeholder="Type a message for everyone to see…"
               autoComplete="off"
               value={reply}
               onChange={(e) => setReply(e.target.value)}

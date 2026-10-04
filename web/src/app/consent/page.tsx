@@ -27,13 +27,13 @@ export default function ConsentPage() {
             Ready when you are.
           </h1>
           <p className="lead rise" style={delay(0.16)}>
-            You and your colleague choose when the conversation begins. Nothing starts until both of you agree.
+            You and your teammate choose when captions begin. Nothing starts until both of you agree.
           </p>
         </header>
         <section className={`${s.panel} rise`} style={delay(0.24)}>
           <RoomPresence />
           <article className="card">
-            <h2 className="cardtitle">Captioning with care.</h2>
+            <h2 className="cardtitle">Before you start.</h2>
             <p className="body">Both participants will see the same captions and can type replies.</p>
             <ul className={`itemlist ${s.list}`}>
               {PROMISES.map((p) => (

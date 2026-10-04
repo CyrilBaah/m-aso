@@ -28,14 +28,14 @@ export function RoomPresence() {
       <article className={`panel-dark ${s.status}`}>
         <span className="live idle">No room</span>
         <h2>You’re not in a room yet.</h2>
-        <p className="body">Go back and start a room, or join one with your colleague’s code.</p>
+        <p className="body">Go back and start a room, or join one with your teammate’s code.</p>
       </article>
     );
 
   return (
     <article className={`panel-dark ${s.status}`}>
       <span className={`live ${online ? "" : "idle"}`}>{online ? `Room ${code} open` : "Connecting…"}</span>
-      <h2>{together ? "You’re both here." : "Waiting for your colleague."}</h2>
+      <h2>{together ? "You’re both here." : "Waiting for your teammate."}</h2>
       <p className="body">
         {together ? (
           <>
@@ -43,7 +43,7 @@ export function RoomPresence() {
           </>
         ) : (
           <>
-            Share code <strong className={s.code}>{code || "…"}</strong> with your colleague. You can carry on; they’ll
+            Share code <strong className={s.code}>{code || "…"}</strong> with your teammate. You can carry on; they’ll
             appear here when they join.
           </>
         )}
@@ -57,7 +57,7 @@ export function RoomPresence() {
         {others.map((n, i) => (
           <span className="chip" key={`${n}-${i}`}>
             <i />
-            {n === "Participant" ? "Your colleague" : n}
+            {n === "Participant" ? "Your teammate" : n}
           </span>
         ))}
       </div>

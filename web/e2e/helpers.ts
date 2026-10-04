@@ -41,9 +41,9 @@ export async function expectNoPageScroll(page: Page) {
   if (inner >= 800) expect(scroll, "fits on one screen").toBeLessThanOrEqual(height + 1);
 }
 
-/** Sends a typed reply through the real room and waits for the room to echo it back. */
+/** Sends a typed message through the real room and waits for the room to echo it back. */
 export async function typeReply(page: Page, text: string) {
-  await page.getByLabel("Type a reply").fill(text);
+  await page.getByLabel("Type a message").fill(text);
   await page.keyboard.press("Enter");
   await expect(page.locator("#caption")).toContainText(text);
 }
