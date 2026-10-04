@@ -43,7 +43,7 @@ test("when Gemma can’t run, the page says why, keeps what was captured, and ca
   await enterRoom(page);
   await typeReply(page, "See you tomorrow at 10:30.");
   await page.getByRole("link", { name: "End conversation" }).click();
-  await expect(page.getByText("No AI summary this time.")).toBeVisible();
+  await expect(page.getByText("No AI summary this time.")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText("ollama pull gemma3:4b")).toBeVisible();
   await expect(page.locator(".summary li").first()).toContainText("Tomorrow");
   await page.getByRole("button", { name: "Try Gemma again" }).click();

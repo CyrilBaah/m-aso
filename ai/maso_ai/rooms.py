@@ -36,6 +36,8 @@ class Line:
 class Room:
     code: str
     clients: dict[WebSocket, str] = field(default_factory=dict)  # socket → participant name
+    members: dict[WebSocket, tuple[int, str]] = field(default_factory=dict)  # socket → (connection id, browser id)
+    consented: set[str] = field(default_factory=set)  # browser ids that agreed on the consent screen
     lines: list[Line] = field(default_factory=list)
     touched: float = field(default_factory=time.time)
     _seq: int = 0
@@ -61,9 +63,22 @@ class Room:
         for ws in dead:
             self.clients.pop(ws, None)
 
+    def people(self) -> list[dict]:
+        out = []
+        for ws, name in self.clients.items():
+            sid, cid = self.members.get(ws, (0, ""))
+            out.append({"name": name, "sid": sid, "agreed": bool(cid) and cid in self.consented})
+        return sorted(out, key=lambda p: p["name"].lower())
+
+    def waiting_for(self) -> list[str]:
+        """Names of people in the room who have not agreed yet. Captions wait for all of them."""
+        return [p["name"] for p in self.people() if not p["agreed"]]
+
     async def announce_presence(self) -> None:
-        names = sorted(self.clients.values(), key=str.lower)
-        await self.broadcast({"type": "presence", "participants": len(names), "names": names})
+        people = self.people()
+        await self.broadcast(
+            {"type": "presence", "participants": len(people), "names": [p["name"] for p in people], "people": people}
+        )
 
 
 class RoomHub:

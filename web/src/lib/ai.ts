@@ -6,9 +6,12 @@ export const WS_URL = AI_URL.replace(/^http/, "ws");
 export type ServerEvent =
   | { type: "welcome"; sid: number; whisper: string }
   | { type: "history"; lines: CaptionEvent[] }
-  | { type: "presence"; participants: number; names: string[] }
+  | { type: "presence"; participants: number; names: string[]; people: Person[] }
   | CaptionEvent
   | { type: "error"; code: string; message: string };
+
+/** Someone in the room, and whether they agreed on the consent screen. */
+export type Person = { name: string; sid: number; agreed: boolean };
 
 export type CaptionEvent = {
   type: "caption";

@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { EditableList, rowId, type Row } from "@/components/EditableList";
 import { Arrow, Icon } from "@/components/Icon";
-import type { CaptionEvent, ServerEvent, SpokenLine } from "@/lib/ai";
+import type { CaptionEvent, Person, ServerEvent, SpokenLine } from "@/lib/ai";
 import { detect, segments } from "@/lib/captions";
 import { KEYS, store, useHydrated, useStored } from "@/lib/store";
 import { NoRoom } from "@/components/NoRoom";
+import { listNames } from "@/lib/names";
 import { delay } from "@/lib/ui";
 import { useRoomSocket } from "@/lib/useRoomSocket";
 import { DEFAULT_PREFS, type Prefs } from "./types";
@@ -64,12 +65,6 @@ function Who({ line }: { line: Pick<Line, "kind" | "speaker" | "mine"> }) {
   return null;
 }
 
-/** "Kofi", "Kofi and Efua", "Kofi, Efua and Yaw" — unnamed people read as "your teammate". */
-function listNames(names: string[]) {
-  const shown = names.map((n) => (n === "Participant" ? "your teammate" : n));
-  return shown.length < 2 ? shown.join("") : `${shown.slice(0, -1).join(", ")} and ${shown.at(-1)}`;
-}
-
 const OFFLINE = "The m’aso service isn’t reachable, so live captions can’t start. Check that it’s running, then try again.";
 
 export function Room() {
@@ -87,7 +82,8 @@ export function Room() {
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
   const [participants, setParticipants] = useState(1);
-  const [names, setNames] = useState<string[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [mySidState, setMySidState] = useState<number | null>(null);
   const [stream, dispatch] = useReducer(streamReducer, { history: [], current: null, interim: null });
   const [announce, setAnnounce] = useState("");
   const [notice, setNotice] = useState("");
@@ -111,10 +107,13 @@ export function Room() {
   const toLine = (e: CaptionEvent): Line => ({ id: `s${e.id}`, kind: e.kind, text: e.text, speaker: e.speaker, mine: e.sid === mySid.current });
 
   const socket = useRoomSocket(code, name, (e: ServerEvent) => {
-    if (e.type === "welcome") mySid.current = e.sid;
+    if (e.type === "welcome") {
+      mySid.current = e.sid; // handlers read the ref: history can arrive before the next render
+      setMySidState(e.sid);
+    }
     else if (e.type === "presence") {
       setParticipants(e.participants);
-      setNames(e.names);
+      setPeople(e.people);
     }
     else if (e.type === "history") dispatch({ type: "history", lines: e.lines.map(toLine) });
     else if (e.type === "error") {
@@ -127,6 +126,11 @@ export function Room() {
     }
   });
   const online = socket.status === "open";
+  // Captions wait for everyone in the room to agree; the service enforces this too.
+  const waitingPeople = people.filter((p) => !p.agreed);
+  const waiting = waitingPeople.map((p) => (p.sid === mySidState ? "you" : p.name));
+  const waitingText = listNames(waiting);
+  const iAgreed = people.some((p) => p.sid === mySidState && p.agreed);
 
   // Our microphone goes to faster-whisper; captions come back to everyone in the room.
   const live = listening && online;
@@ -147,6 +151,7 @@ export function Room() {
     setError("");
     if (listening) return setListening(false);
     if (!online) return setError(OFFLINE);
+    if (waiting.length) return setError(`Captions start when everyone has agreed. Waiting for ${waitingText}.`);
     setListening(true);
   }
 
@@ -194,12 +199,15 @@ export function Room() {
   if (hydrated && !code) return <NoRoom />;
 
   const { history, current, interim } = stream;
-  // Everyone in the room except us (one copy of our own name is ours).
-  const others = [...names];
-  const me = others.indexOf(name);
-  if (me >= 0) others.splice(me, 1);
+  const others = people.filter((p) => p.sid !== mySidState).map((p) => p.name);
   const idle = interim === null && current === null;
-  const stateLabel = listening ? "Listening" : online ? `${participants} in room` : "Connecting…";
+  const stateLabel = listening
+    ? "Listening"
+    : !online
+      ? "Connecting…"
+      : waiting.length
+        ? `Waiting for ${waitingText} to agree`
+        : `${participants} in room`;
   const sourceNote = online
     ? "Everyone in the room sees these captions. m’aso’s own speech model (faster-whisper) transcribes the microphone; audio is never stored or sent to anyone else."
     : "Connecting to the m’aso service… Captions and replies start as soon as it’s reachable.";
@@ -334,6 +342,14 @@ export function Room() {
               }}
             />
           </div>
+          {online && people.length > 0 && !iAgreed && (
+            <p className={s.capError} role="status" id="consentNote">
+              You haven’t agreed to captions yet.{" "}
+              <Link href="/consent" className={s.consentLink}>
+                Go to the consent screen
+              </Link>
+            </p>
+          )}
           <p className={s.source} id="sourceNote">
             {sourceNote}
           </p>

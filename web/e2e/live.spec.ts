@@ -46,8 +46,8 @@ test("create, join, consent and caption a live conversation between two people",
   await expect(ama.getByText("You’re both here.")).toBeVisible();
   await expect(ama.getByLabel("In the room")).toContainText("Kofi");
   await expect(kofi.getByLabel("In the room")).toContainText("Ama");
-  await ama.getByRole("link", { name: "I agree, start captions" }).click();
-  await kofi.getByRole("link", { name: "I agree, start captions" }).click();
+  await ama.getByRole("button", { name: "I agree, start captions" }).click();
+  await kofi.getByRole("button", { name: "I agree, start captions" }).click();
   await expect(ama.locator("#liveState")).toHaveText("2 in room");
 
   // Ama speaks; Kofi reads it, labelled with her name, and the key details are picked out

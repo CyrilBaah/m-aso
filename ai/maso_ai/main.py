@@ -121,7 +121,7 @@ async def caption_worker(room: Room, ws: WebSocket, sid: int, jobs: asyncio.Queu
 
 
 @app.websocket("/rooms/{code}/ws")
-async def room_socket(ws: WebSocket, code: str, name: str = "Participant") -> None:
+async def room_socket(ws: WebSocket, code: str, name: str = "Participant", cid: str = "") -> None:
     code = code.upper()
     if not CODE.match(code):
         await ws.close(code=4422, reason="invalid room code")
@@ -131,6 +131,7 @@ async def room_socket(ws: WebSocket, code: str, name: str = "Participant") -> No
     speaker = name[:40] or "Participant"
     sid = next(_socket_ids)
     room.clients[ws] = speaker
+    room.members[ws] = (sid, cid[:64])
     await ws.send_json({"type": "welcome", "sid": sid, "whisper": whisper.status})
     await ws.send_json({"type": "history", "lines": [l.as_event() for l in room.lines[-20:]]})
     await room.announce_presence()
@@ -145,13 +146,21 @@ async def room_socket(ws: WebSocket, code: str, name: str = "Participant") -> No
             if message["type"] == "websocket.disconnect":
                 break
             if message.get("bytes") is not None:
+                if segmenter is not None and room.waiting_for():
+                    # Someone joined who hasn't agreed: stop captioning until they do.
+                    segmenter = None
+                    await ws.send_json(consent_error(room))
                 if segmenter is not None:  # audio only counts between audio_start and audio_stop
                     for job in segmenter.feed(message["bytes"], want_interim):
                         jobs.put_nowait(job)
                 continue
             event = json.loads(message.get("text") or "{}")
             kind = event.get("type")
-            if kind == "rename":
+            if kind == "consent":
+                if cid:
+                    room.consented.add(cid[:64])
+                await room.announce_presence()
+            elif kind == "rename":
                 speaker = str(event.get("name", "")).strip()[:40] or "Participant"
                 room.clients[ws] = speaker
                 await room.announce_presence()
@@ -160,6 +169,9 @@ async def room_socket(ws: WebSocket, code: str, name: str = "Participant") -> No
                 if text:
                     await room.broadcast(room.add_line("typed", speaker, sid, text).as_event())
             elif kind == "audio_start":
+                if room.waiting_for():
+                    await ws.send_json(consent_error(room))
+                    continue
                 if not whisper.ready:
                     await ws.send_json({"type": "error", "code": "whisper_" + whisper.status, "message": whisper_message()})
                     continue
@@ -174,8 +186,15 @@ async def room_socket(ws: WebSocket, code: str, name: str = "Participant") -> No
     finally:
         jobs.put_nowait(None)
         room.clients.pop(ws, None)
+        room.members.pop(ws, None)
         await room.announce_presence()
         await asyncio.wait_for(worker, timeout=30)
+
+
+def consent_error(room: Room) -> dict:
+    names = [n if n != "Participant" else "your teammate" for n in room.waiting_for()]
+    who = " and ".join(names) or "everyone"
+    return {"type": "error", "code": "consent_pending", "message": f"Captions start when everyone has agreed. Waiting for {who}."}
 
 
 def whisper_message() -> str:

@@ -48,8 +48,10 @@ export async function typeReply(page: Page, text: string) {
   await expect(page.locator("#caption")).toContainText(text);
 }
 
-/** Opens the room screen and waits until this browser is connected to the room. */
+/** Agrees on the consent screen, then waits in the room until it is connected and ready. */
 export async function enterRoom(page: Page) {
-  await page.goto("/room");
-  await expect(page.locator("#liveState")).toHaveText(/in room$/);
+  await page.goto("/consent");
+  await expect(page.getByText(/^Room .* open$/)).toBeVisible();
+  await page.getByRole("button", { name: "I agree, start captions" }).click();
+  await expect(page.locator("#liveState")).toHaveText(/in room$/, { timeout: 20_000 });
 }

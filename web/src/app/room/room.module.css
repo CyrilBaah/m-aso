@@ -31,6 +31,7 @@
 .listen[aria-pressed=true]{background:var(--yellow);color:var(--ink);border-color:var(--yellow)}
 .listen[aria-pressed=true] :global(.ico){color:var(--ink);animation:micPulse 1s ease-in-out infinite}
 .source{flex:none;margin:10px 0 0;font-size:var(--fs-label);line-height:1.45;color:var(--on-dark-muted);max-width:58ch}
+.consentLink{color:#fff;font-weight:800;text-decoration:underline;text-underline-offset:3px}
 .capError{margin:12px 0 0;padding:11px 14px;border-radius:12px;background:#ff5d4724;border:1px solid #ff5d4766;color:#ffd7d0;font-size:var(--fs-small);line-height:1.45}
 
 .reply{display:flex;gap:8px;padding-top:clamp(14px,2.8vh,30px);flex:none}

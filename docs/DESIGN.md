@@ -68,4 +68,6 @@ React components live in `web/src/components/`: `AppNav`, `Icon` and `Arrow`, `S
 - AI output is always labelled with its source and is always editable and removable before anything is saved.
 - Browser state lives in `localStorage` through `src/lib/store.ts` (guarded, and read with `useSyncExternalStore` so server and browser renders agree). Keys: `maso_room`, `maso_name`, `maso_prefs`, and the session's `maso_transcript`, `maso_details`, `maso_reply`, `maso_summary`, which `resetSession()` clears.
 - Every screen has `<main id="main">`, so the skip link has a target.
-- The room keeps its header small so captions stay the largest thing on screen.
+- The room keeps its header small so captions stay the largest thing on screen. Its heading names who you are talking with.
+- **Show on screen** is a full-screen, flat black board: white type sized to the message (`min(13vmin, 9rem)` for a few words, smaller as it grows), no decoration. Whatever is shown is also sent to the room.
+- Typed messages from anyone carry a chip (“You · typed”, “Kofi · typed”) and the same size as speech.

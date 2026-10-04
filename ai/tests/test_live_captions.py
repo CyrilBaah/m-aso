@@ -55,7 +55,9 @@ def server_url():
 def test_speech_becomes_a_shared_caption(spoken_pcm, server_url):
     async def run() -> list[dict]:
         url = f"{server_url}/rooms/LIVE-123/ws"
-        async with websockets.connect(f"{url}?name=Ama") as a, websockets.connect(f"{url}?name=Kofi") as b:
+        async with websockets.connect(f"{url}?name=Ama&cid=ama") as a, websockets.connect(f"{url}?name=Kofi&cid=kofi") as b:
+            for sock in (a, b):  # both agree, as on the consent screen
+                await sock.send(json.dumps({"type": "consent"}))
             await a.send(json.dumps({"type": "audio_start", "interim": True}))
             for i in range(0, len(spoken_pcm), 3200):  # 100 ms chunks, like the browser
                 await a.send(spoken_pcm[i : i + 3200])

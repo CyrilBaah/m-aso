@@ -1,10 +1,17 @@
 # m’aso
 
-**Make room for every voice.** m’aso gives Deaf and hard-of-hearing colleagues live captions, typed replies and a private record of what was agreed.
+**Make room for every voice.**
 
-Two people open a shared room. Whatever one says is captioned live on both screens; either can type a reply that appears just as large. Dates, times and follow-ups are picked out as they’re said. At the end, Gemma writes a short summary that both can correct before saving, or delete outright.
+I used to work on a team where one or two teammates couldn’t hear. In meetings they used captions. When the rest of us wanted to tell them something, we typed what we meant and showed them the screen. That’s where m’aso came from.
 
-Everything runs on your own machine: speech is transcribed by faster-whisper and summarised by Gemma through Ollama. No audio or text goes to a third party, and raw audio is never stored.
+Two people open a private room:
+
+- **Live captions.** What one person says appears on both screens about a second later, with their name on it.
+- **Typing for everyone.** Anyone can type a message, and it shows just as large as speech. **Show on screen** turns the laptop into a full-screen board of huge, high-contrast text: type it, turn it around.
+- **Both of you agree first.** Captions don’t start until everyone in the room has agreed on the consent screen.
+- **A note of what was agreed.** At the end, Gemma writes a short summary — decisions, action items, dates — that you both can correct before saving, or delete.
+
+Everything runs on your own laptop with open models: faster-whisper for speech, Gemma through Ollama for the summary. No audio or text goes to a third party, it costs nothing to run, and the models can be swapped in one line.
 
 ## How it fits together
 
@@ -49,6 +56,6 @@ The end-to-end suite starts both servers if needed. Its live test runs two Chrom
 
 ## Privacy
 
-- Each person agrees on the consent screen before entering the room, and everyone in the room sees whenever captions are on.
+- Captions start only when everyone in the room has agreed on the consent screen; the AI service enforces this, and pauses captions if someone new joins without agreeing. Everyone sees whenever captions are on.
 - Audio lives in memory only for the phrase being transcribed. Rooms and transcripts are in memory and vanish when everyone leaves for two hours, or immediately on **Delete session**.
 - Summaries are labelled as written by Gemma, and every row can be corrected or removed before saving.

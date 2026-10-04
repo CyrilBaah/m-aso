@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { WS_URL, type ServerEvent } from "@/lib/ai";
+import { clientId } from "@/lib/store";
 
 export type SocketStatus = "connecting" | "open" | "offline";
 
@@ -22,7 +23,7 @@ export function useRoomSocket(code: string, name: string, onEvent: (e: ServerEve
     let retry = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const connect = () => {
-      const socket = new WebSocket(`${WS_URL}/rooms/${encodeURIComponent(code)}/ws?name=${encodeURIComponent(nameRef.current)}`);
+      const socket = new WebSocket(`${WS_URL}/rooms/${encodeURIComponent(code)}/ws?name=${encodeURIComponent(nameRef.current)}&cid=${encodeURIComponent(clientId())}`);
       socket.binaryType = "arraybuffer";
       ws.current = socket;
       socket.onopen = () => {

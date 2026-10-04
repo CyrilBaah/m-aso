@@ -13,3 +13,6 @@
   .panel{grid-template-columns:1fr}
   .status :global(.live){margin-bottom:28px}
 }
+.chips{list-style:none;padding:0}
+.pending i{background:var(--on-dark-muted)}
+.error{margin:14px 0 0;padding:11px 14px;border-radius:var(--r-sm);background:var(--coral-tint);color:#5a1a10;font-size:var(--fs-small);line-height:1.45}

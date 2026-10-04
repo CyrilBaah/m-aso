@@ -49,6 +49,7 @@ export const KEYS = {
   prefs: "maso_prefs",
   name: "maso_name",
   transcript: "maso_transcript",
+  client: "maso_client",
 } as const;
 
 /** Everything a session leaves behind. Cleared on a new room or on delete. */
@@ -72,6 +73,16 @@ export function useStored(key: string, fallback: string): string {
     () => store.get(key) ?? fallback,
     () => fallback,
   );
+}
+
+/** A lasting, random id for this browser, so agreeing on the consent screen still counts in the room. */
+export function clientId(): string {
+  let id = store.get(KEYS.client);
+  if (!id) {
+    id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+    store.set(KEYS.client, id);
+  }
+  return id;
 }
 
 const noop = () => () => {};
